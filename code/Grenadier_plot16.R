@@ -1,17 +1,58 @@
-## Explore grenadier larvae captures using depth discrete tows and oblique tows at stations with positive tows for macrourids. M Paquin####
 
-library(readxl)
-# library(tidyverse)
-library(dplyr)
-library(magrittr)
-library(ggplot2)
+# Purpose ----------------------------------------------------------------------
+
+# Explore grenadier larvae captures using depth discrete tows and oblique 
+# tows at stations with positive tows for macrourids. 
+# M Paquin and E Markowitz
+
+# Install Libraries ------------------------------------------------------------
+
+# Here we list all the packages we will need for this whole process
+# We'll also use this in our works cited page!!!
+PKG <- c(
+
+  "devtools", 
+  
+  "ggplot2", # Create Elegant Data Visualizations Using the Grammar of Graphics
+  "scales", # nicer lables in ggplot2
+  "ggthemes", 
+  "sf",
+  "ggspatial", 
+  "maps", 
+  "tidyr",
+  "plyr",
+  "dplyr",
+  "magrittr",
+  "readxl", 
+  "stringr",
+  "stringi",
+  "akgfmaps", # RACE-GAP Specific # devtools::install_github("afsc-gap-products/akgfmaps", build_vignettes = TRUE)
+  "pingr", # check website links
+  "httr" # check website links
+  # "flextable", # making pretty tables
+)
+
+PKG <- unique(PKG)
+for (p in PKG) {
+  if(!require(p,character.only = TRUE)) {
+    if (p == "akgfmaps") {
+      devtools::install_github("afsc-gap-products/akgfmaps", build_vignettes = TRUE)
+    } else {
+      install.packages(p)
+    }
+  require(p,character.only = TRUE)}
+}
+
+## Define CRS ------------------------------------------------------------------
+
+crs_out <- "EPSG:3338"
+
+# Wrangle data -----------------------------------------------------------------
 
 # larval_dat<-read_excel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
-#                                                          sheet = "GrenadierLarvlxy_time_step_targ") %>%
 larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
                          sheet = "GrenadierLarvlxy_time_step_targ") %>%
   dplyr::filter(!is.na(Corrected_Length)) %>%
-  # dplyr::filter(!is.na(Canyon)) %>% # will be added later, but not valuable as NA
   dplyr::arrange((Corrected_Length)) %>%
   dplyr::mutate(
     
@@ -47,11 +88,18 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
     ) # note that NA was not defined here. if something is not defined, it will be NA in the new column unless you species TRUE ~ "blah"
   ) %>% 
   # for troubleshooting ease, I am going to cut this table down to the necessary columns
-  dplyr::select(Year, Canyon, canyon_title, MAX_GEAR_DEPTH, Corrected_Length, size_bin_label, Latitude, Longitude)
+  dplyr::select(Year, Canyon, canyon_title, MAX_GEAR_DEPTH, 
+                Corrected_Length, size_bin_label, Latitude, Longitude) %>% 
+  sf::st_as_sf(coords = c("Longitude", "Latitude"), 
+               remove = FALSE,
+               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
+  sf::st_transform(crs = crs_out)
 
 
 # labels in this vector need to match values in: 
 # unique(larval_dat$size_bin_label)
+
+# Identify size bin color pallete ----------------------------------------------
 
 color_palette <- c("0.1-8 mm" = "grey",
                     "8-10.5 mm" = "pink",
@@ -61,6 +109,11 @@ color_palette <- c("0.1-8 mm" = "grey",
                     "16.6-18.5 mm" = "gold",
                     "18.6-20.5 mm" = "forestgreen", 
                     "20.6-100 mm" = "black")
+
+# Plot size bins by canyon and depth -------------------------------------------
+
+# since we are plotting this a few ways, we'll prepare plotting into a function
+
 plot_p16 <- function(year0) {
 p16 <- larval_dat %>%
   dplyr::filter(Year %in% year0) %>% 
@@ -95,7 +148,7 @@ p16 <- larval_dat %>%
 return(p16)
 }
 
-# iteratively plot data for each of the plots
+## Plot and save data for one year iteratively ---------------------------------
 for (i in c(1993, 2008)) {  
   aaa <- plot_p16(year0 = i) 
   ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.png"),
@@ -105,7 +158,7 @@ for (i in c(1993, 2008)) {
   
 }
 
-# plot specific year(s) of data in this plot
+## plot and save specific year(s) of data in one plot --------------------------
 yrs <- c(1993, 2007, 2008)
 aaa <- plot_p16(year0 = yrs)
 ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.png"),
@@ -113,15 +166,9 @@ ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_la
 ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.tiff"),
        plot=aaa, width=8, height=4)
 
+# Plot maps of where grenadier were found by year ------------------------------
 
-# -------------------------------------
-
-library(maps)
-library(sf)
-library(akgfmaps)
-library(scales)
-
-crs_out <- "EPSG:3338"
+## Get world map ---------------------------------------------------------------
 
 world_coordinates <- maps::map("world", plot = FALSE, fill = TRUE) %>% 
   sf::st_as_sf() %>%
@@ -129,6 +176,8 @@ world_coordinates <- maps::map("world", plot = FALSE, fill = TRUE) %>%
   sf::st_transform(crs = crs_out) %>% 
   dplyr::filter(ID %in% c("USA", "Russia", "Canada")) %>% 
   dplyr::mutate(ID = ifelse(ID == "USA", "Alaska", ID))
+
+## Get place labels for map ----------------------------------------------------
 
 place_labels <- data.frame(
   type = c("islands", "islands", "islands", "islands", 
@@ -167,6 +216,7 @@ place_labels <- data.frame(
                crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
   sf::st_transform(crs = crs_out) 
 
+## Determine map boundaries ----------------------------------------------------
 
 boundaries <- data.frame(lon = c(-180, -160), # c(-180, -140)
                         lat = c(50, 64) )  %>% # c(46, 66)
@@ -176,21 +226,18 @@ boundaries <- data.frame(lon = c(-180, -160), # c(-180, -140)
   sf::st_coordinates() %>% 
   data.frame()
 
+## Groundfish Bottom Trawl Survey catch and haul data (FOSS) -------------------
 
-larval_dat <- larval_dat %>% 
-  sf::st_as_sf(coords = c("Longitude", "Latitude"), 
-           remove = FALSE,
-           crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
-  sf::st_transform(crs = crs_out)
+### Download haul data ---------------------------------------------------------
 
-# download haul data
-api_link_haul <- 'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_haul/'
 dat <- data.frame()
 for (i in seq(0, 500000, 10000)){
   ## find how many iterations it takes to cycle through the data
   print(i)
   ## query the API link
-  res <- httr::GET(url = paste0(api_link_haul, "?offset=",i,"&limit=10000"))
+  res <- httr::GET(url = paste0(
+    'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_haul/', 
+    "?offset=",i,"&limit=10000"))
   ## convert from JSON format
   data <- jsonlite::fromJSON(base::rawToChar(res$content)) 
   
@@ -205,10 +252,8 @@ for (i in seq(0, 500000, 10000)){
                             dplyr::select(-links)) # necessary for API accounting, but not part of the dataset)
 }
 dat_haul <- dat
-  
 
-# download catch data for Grenadier
-api_link_catch <- 'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_catch/'
+### Download catch data for Grenadier ------------------------------------------
 
 ## query the API link
 # data for all walleye pollock caught in all 2023 eastern Bering Sea survey hauls
@@ -223,9 +268,10 @@ grenadier_codes <- c(21204, # Caelorinchus scaphopsis shoulderspot grenadier
                      21238, # Coryphaenoides filifer filamented grenadier
                      21239 # Coryphaenoides longifilis longfin grenadier
                      )
+
 for (i in grenadier_codes) {
   res <- httr::GET(url = paste0(
-    api_link_catch, 
+    'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_catch/', 
     '?q={"species_code":',i,'}'))
   ## convert from JSON format
   data <- jsonlite::fromJSON(base::rawToChar(res$content)) 
@@ -238,6 +284,8 @@ for (i in grenadier_codes) {
 }
 dat_catch <- dat
 
+### Join groundfish haul and catch data ----------------------------------------
+
 gfdat <- dat_catch %>%
   dplyr::left_join(dat_haul) %>% 
   dplyr::group_by(species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) %>% 
@@ -249,13 +297,15 @@ gfdat <- dat_catch %>%
   sf::st_transform(crs = crs_out) %>% 
   dplyr::mutate(Year = year)
 
+## Pick years in both larval and groundfish data for plotting ------------------
+
 surveyyrs <- dat_haul %>% 
   dplyr::select(year, srvy) %>% 
   unique() %>% 
   dplyr::arrange(desc(year)) %>% 
   dplyr::filter(year %in% unique(c(gfdat$Year, larval_dat$Year)))
 
-# Groundfish data --------
+## Inport Groundfish Bottom Trawl Survey shapefiles (akgfmaps) -----------------
 
 shp_ebs <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto")
 shp_nbs <- akgfmaps::get_base_layers(select.region = "bs.north", set.crs = "auto")
@@ -288,6 +338,7 @@ tidyr::crossing(shp_bss$survey.area %>%
     dplyr::mutate(SURVEY = "BSS"))) %>%
   dplyr::select(Survey = SURVEY, geometry, Year)
 
+## Plot map --------------------------------------------------------------------
 
 p17 <- ggplot2::ggplot() +
   # Survey area shapefile
@@ -296,10 +347,7 @@ p17 <- ggplot2::ggplot() +
                                  color = Year),
                    fill = "transparent",
                    color = "grey50",
-                   # alpha = 0.5,
                    show.legend = FALSE) +
-  # geom_map() function takes world coordinates  
-  # as input to plot world map 
   ggplot2::geom_sf(data = world_coordinates,
                    fill = "grey10",
                    color = "grey20")  + 
@@ -308,7 +356,7 @@ p17 <- ggplot2::ggplot() +
                               breaks = seq(-180, -150, 5)) +
   ggplot2::scale_y_continuous(name = "Latitude °N",
                               breaks = seq(50, 65, 5)) + # seq(52, 62, 2)
-    facet_wrap(~Year) +
+  ggplot2::facet_wrap(~Year) +
     
   ggplot2::geom_sf_text(
     data = place_labels %>% dplyr::filter(type == "mainland"),
@@ -361,7 +409,7 @@ p17 <- ggplot2::ggplot() +
     strip.text = element_text(face = "bold"), # , family = font0
     panel.border = element_rect(colour = "grey20", linewidth = .25, fill = NA),
     panel.background = element_rect(fill = "white"), 
-    panel.grid = element_line(colour="grey80", size=0.5), 
+    panel.grid = element_line(colour="grey80", linewidth = 0.5), 
     plot.title = element_text(face = "bold"), # , size = 12, family = font0
     axis.text = element_text(face = "bold"), # , size = 12 , family = font0
     legend.key = element_blank(), 
@@ -378,6 +426,8 @@ p17 <- ggplot2::ggplot() +
 
 
 p17
+
+## Plot and save data ----------------------------------------------------------
 
 ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.png"),
        plot=p17, width=8, height=4)
