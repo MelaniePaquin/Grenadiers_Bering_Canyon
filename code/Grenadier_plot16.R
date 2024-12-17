@@ -8,7 +8,7 @@ library(ggplot2)
 
 # larval_dat<-read_excel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
 #                                                          sheet = "GrenadierLarvlxy_time_step_targ") %>%
-larval_dat <- read_excel("./GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
+larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
                          sheet = "GrenadierLarvlxy_time_step_targ") %>%
   dplyr::filter(!is.na(Corrected_Length)) %>%
   # dplyr::filter(!is.na(Canyon)) %>% # will be added later, but not valuable as NA
