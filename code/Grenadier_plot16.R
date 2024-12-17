@@ -97,16 +97,22 @@ return(p16)
 
 # iteratively plot data for each of the plots
 for (i in c(1993, 2008)) {  
-  plot_p16(year0 = i) 
+  aaa <- plot_p16(year0 = i) 
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.png"),
+         plot=aaa, width=8, height=4)
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.tiff"),
+         plot=aaa, width=8, height=4)
+  
 }
 
 # plot specific year(s) of data in this plot
-plot_p16(year0 = c(1993, 2007, 2008))
+yrs <- c(1993, 2007, 2008)
+aaa <- plot_p16(year0 = yrs)
+ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.png"),
+       plot=aaa, width=8, height=4)
+ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.tiff"),
+       plot=aaa, width=8, height=4)
 
-ggsave(filename = "./2008_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.png",
-       plot=p16, width=8, height=4)
-ggsave(filename = "./2008_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.tiff",
-       plot=p16, width=8, height=4)
 
 # -------------------------------------
 
@@ -373,5 +379,9 @@ p17 <- ggplot2::ggplot() +
 
 p17
 
+ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.png"),
+       plot=p17, width=8, height=4)
+ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.tiff"),
+       plot=p17, width=8, height=4)
 
 
