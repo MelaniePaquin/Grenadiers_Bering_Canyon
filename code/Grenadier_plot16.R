@@ -11,19 +11,19 @@
 # We'll also use this in our works cited page!!!
 PKG <- c(
 
-  "devtools", 
-  
+  "devtools",
+
   "ggplot2", # Create Elegant Data Visualizations Using the Grammar of Graphics
   "scales", # nicer lables in ggplot2
-  "ggthemes", 
+  "ggthemes",
   "sf",
-  "ggspatial", 
-  "maps", 
+  "ggspatial",
+  "maps",
   "tidyr",
   "plyr",
   "dplyr",
   "magrittr",
-  "readxl", 
+  "readxl",
   "stringr",
   "stringi",
   "akgfmaps", # RACE-GAP Specific # devtools::install_github("afsc-gap-products/akgfmaps", build_vignettes = TRUE)
@@ -75,13 +75,13 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
                             ordered = TRUE), 
     canyon_title = dplyr::case_when(
       Canyon == "Bristol Cyn" ~ "Bristol\nCyn", # "\n" is a special character that makes a new line :) 
-      Canyon == "Adjacent slope to Cyns" ~ "Adjacent\nSlope", 
+      Canyon == "Adjacent slope to Cyns" ~ "Adjacent\nSlope to Cyns", 
       Canyon == "Bering Cyn" ~ "Bering\nCyn", 
-      Canyon == "Bristol Cyn close to shelf break" ~ "Bristol\nCyn\nShelf\nBreak", 
-      Canyon == "Bering Cyn W thalweg" ~ "Bering\nCyn\nw/thalweg", 
+      Canyon == "Bristol Cyn close to shelf break" ~ "Close to Shelf\nBreak Bristol Cyn", 
+      Canyon == "Bering Cyn W thalweg" ~ "West thalweg\nBering Cyn", 
       Canyon == "Aleutian Chain" ~ "Aleut.\nChain", 
-      Canyon == "Bogoslof Complex" ~ "Bogoslof\nComp.", 
-      Canyon == "Bering Cyn Bering Trunk" ~ "Bering Cyn\nBering Trunk"
+      Canyon == "Bogoslof Complex" ~ "Bogoslof\nComplex", 
+      Canyon == "Bering Cyn Bering Trunk" ~ "Bering Trunk\nBering Cyn"
       # example for grouping variables 
       # Canyon == "Bering Cyn W thalweg" ~ "Bering\nCyn", # "Bering\nCyn\nw/thalweg", 
       # Canyon %in% c("Bering Cyn W thalweg", "Bering Cyn") ~ "A",      
@@ -95,6 +95,7 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
                crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
   sf::st_transform(crs = crs_out)
 
+write.csv(x = larval_dat,file = "./data/larval_dat_processed.csv")
 
 # labels in this vector need to match values in: 
 # unique(larval_dat$size_bin_label)
@@ -120,11 +121,14 @@ p16 <- larval_dat %>%
   ggplot(mapping = aes(x = canyon_title, y = MAX_GEAR_DEPTH, color = size_bin_label))+
   #Add line at 200 m depth
   geom_hline(yintercept = 200, linewidth = 0.2, color="gray") +
-  geom_jitter(mapping = aes(color = size_bin_label), # using geom_jitter instead of geom_point because points are being hidden
-             alpha = .5, 
-             width = .15,
-             height = 0,
-             size = 3) +
+  # geom_jitter(mapping = aes(color = size_bin_label), # using geom_jitter instead of geom_point because points are being hidden
+  #            alpha = .5, 
+  #            width = .2,
+  #            height = 0,
+  #            size = 3) +
+  geom_point(position=position_jitter(h=.05, w=0.3),
+             mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
+  
   #reverse y-axis for depth
   scale_y_reverse(limits = c(700, 0, by=25),
                   expand = c(0.03, 0.03))+
@@ -151,9 +155,9 @@ return(p16)
 ## Plot and save data for one year iteratively ---------------------------------
 for (i in c(1993, 2008)) {  
   aaa <- plot_p16(year0 = i) 
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.png"),
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16Labels.png"),
          plot=aaa, width=8, height=4)
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.tiff"),
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16Labels.tiff"),
          plot=aaa, width=8, height=4)
   
 }
@@ -161,9 +165,9 @@ for (i in c(1993, 2008)) {
 ## plot and save specific year(s) of data in one plot --------------------------
 yrs <- c(1993, 2007, 2008)
 aaa <- plot_p16(year0 = yrs)
-ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.png"),
+ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Labels.png"),
        plot=aaa, width=8, height=4)
-ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plotLabelsTEST.tiff"),
+ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Labels.tiff"),
        plot=aaa, width=8, height=4)
 
 # Plot maps of where grenadier were found by year ------------------------------
@@ -288,9 +292,14 @@ dat_catch <- dat
 
 gfdat <- dat_catch %>%
   dplyr::left_join(dat_haul) %>% 
-  dplyr::group_by(species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) %>% 
+  dplyr::group_by(srvy, species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) %>% 
   dplyr::summarise(cpue_nokm2 = sum(cpue_nokm2, na.rm = TRUE), 
-                   cpue_kgkm2 = sum(cpue_kgkm2, na.rm = TRUE)) %>%
+                   cpue_kgkm2 = sum(cpue_kgkm2, na.rm = TRUE),
+                   count = sum(count, na.rm = TRUE),
+                   weight_kg = sum(weight_kg, na.rm = TRUE))
+write.csv(x = gfdat,file = "./data/gfdat_processed.csv")
+
+gfdat<-gfdat %>%
   sf::st_as_sf(coords = c("longitude_dd_start", "latitude_dd_start"), 
                remove = FALSE,
                crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
