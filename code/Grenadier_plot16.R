@@ -60,7 +60,8 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
     # size_bin1 = cut(x = Corrected_Length, breaks = c(8.5:30.5)), 
     
     # unique bins
-    size_bin1 = cut(x = Corrected_Length, breaks = c(.1, 7.9, 10.5, 12.5, 14.5, 16.5, 18.5, 20.5, 100)), # note .1 and 100 for values beyond normal bins
+    #size_bin1 = cut(x = Corrected_Length, breaks = c(.1, 7.9, 10.5, 12.5, 14.5, 16.5, 18.5, 20.5, 100)), # note .1 and 100 for values beyond normal bins
+    size_bin1 = cut(x = Corrected_Length, breaks = c(.1, 7.9, 10.5, 12.5, 14.5, 16.5, 18.5, 20.5, 22.5, 24.5, 100)), # note .1 and 100 for values beyond normal bins
     size_bin_label = as.character(size_bin1), 
     size_bin_label = paste0(
       as.numeric(gsub(pattern = "(", replacement = "", fixed = TRUE, 
@@ -81,7 +82,11 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
       Canyon == "Bering Cyn W thalweg" ~ "West thalweg\nBering Cyn", 
       Canyon == "Aleutian Chain" ~ "Aleut.\nChain", 
       Canyon == "Bogoslof Complex" ~ "Bogoslof\nComplex", 
-      Canyon == "Bering Cyn Bering Trunk" ~ "Bering Trunk\nBering Cyn"
+      Canyon == "Bering Cyn Bering Trunk" ~ "Bering Trunk\nBering Cyn",
+      Canyon == "S of Zhemchug Cyn in unnamed 6 cyn" ~ "Unnamed 6 cyn\nSo. of Zhemchug Cyn", # adding many more canyon titles
+      Canyon == "N of Pribilof Cyn adjacent to unnamed 4 cyn" ~ "Adjacent to\nUnnamed 4 cyn\nNo. of Pribilof Cyn",
+      Canyon == "N of unnamed 5 cyn" ~ "No. of Unnamed 5 cyn",
+      Canyon == "Adjacent to St Paul Cyn in unnamed 5 cyn" ~ "Unnamed 5 cyn\nAdjacent to\nSt Paul Cyn"
       # example for grouping variables 
       # Canyon == "Bering Cyn W thalweg" ~ "Bering\nCyn", # "Bering\nCyn\nw/thalweg", 
       # Canyon %in% c("Bering Cyn W thalweg", "Bering Cyn") ~ "A",      
@@ -109,7 +114,9 @@ color_palette <- c("0.1-8 mm" = "grey",
                     "14.6-16.5 mm" = "purple",
                     "16.6-18.5 mm" = "gold",
                     "18.6-20.5 mm" = "forestgreen", 
-                    "20.6-100 mm" = "black")
+                    "20.6-22.5 mm" = "cyan",# Addition of size bin titles
+                    "22.6-24.5 mm" = "gold",
+                    "24.6-100 mm" = "black")
 
 # Plot size bins by canyon and depth -------------------------------------------
 
@@ -126,7 +133,13 @@ p16 <- larval_dat %>%
   #            width = .2,
   #            height = 0,
   #            size = 3) +
-  geom_point(position=position_jitter(h=.05, w=0.3),
+  # Plot 1993 and 2008 with following conditions for jitter so plot looks correct
+  #geom_point(position=position_jitter(h=.05, w=0.3),
+             #mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
+  # Plot 2008 with following conditions for jitter so plot looks correct
+  #geom_point(position=position_jitter(h=.0, w=0.1),
+            #mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
+  geom_point(position=position_jitter(h=0, w=0.2), # geom_jitter values for 2007 but run multiple X to get horizontal spread
              mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
   
   #reverse y-axis for depth
@@ -153,11 +166,11 @@ return(p16)
 }
 
 ## Plot and save data for one year iteratively ---------------------------------
-for (i in c(1993, 2008)) {  
+for (i in c(1993, 2007, 2008)) {  
   aaa <- plot_p16(year0 = i) 
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16Labels.png"),
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.png"),
          plot=aaa, width=8, height=4)
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16Labels.tiff"),
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.tiff"),
          plot=aaa, width=8, height=4)
   
 }
@@ -165,9 +178,9 @@ for (i in c(1993, 2008)) {
 ## plot and save specific year(s) of data in one plot --------------------------
 yrs <- c(1993, 2007, 2008)
 aaa <- plot_p16(year0 = yrs)
-ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Labels.png"),
+ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.png"),
        plot=aaa, width=8, height=4)
-ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Labels.tiff"),
+ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.tiff"),
        plot=aaa, width=8, height=4)
 
 # Plot maps of where grenadier were found by year ------------------------------
