@@ -14,7 +14,7 @@ PKG <- c(
   "devtools",
 
   "ggplot2", # Create Elegant Data Visualizations Using the Grammar of Graphics
-  "scales", # nicer lables in ggplot2
+  "scales", # nicer labels in ggplot2
   "ggthemes",
   "sf",
   "ggspatial",
@@ -86,7 +86,9 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
       Canyon == "S of Zhemchug Cyn in unnamed 6 cyn" ~ "Unnamed 6 cyn\nSo. of Zhemchug Cyn", # adding many more canyon titles
       Canyon == "N of Pribilof Cyn adjacent to unnamed 4 cyn" ~ "Adjacent to\nUnnamed 4 cyn\nNo. of Pribilof Cyn",
       Canyon == "N of unnamed 5 cyn" ~ "No. of Unnamed 5 cyn",
-      Canyon == "Adjacent to St Paul Cyn in unnamed 5 cyn" ~ "Unnamed 5 cyn\nAdjacent to\nSt Paul Cyn"
+      Canyon == "Adjacent to St Paul Cyn in unnamed 5 cyn" ~ "Unnamed 5 cyn\nAdjacent to\nSt Paul Cyn",
+      Canyon == "S of Pribilof Cyn" ~ "So. of Pribilof \nCyn",
+      Canyon == "Pribilof Cyn" ~ "Pribilof \nCyn"
       # example for grouping variables 
       # Canyon == "Bering Cyn W thalweg" ~ "Bering\nCyn", # "Bering\nCyn\nw/thalweg", 
       # Canyon %in% c("Bering Cyn W thalweg", "Bering Cyn") ~ "A",      
