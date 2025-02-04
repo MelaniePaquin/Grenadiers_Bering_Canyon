@@ -475,3 +475,10 @@ ggplot2::ggplot(data = larval_dat,# %>%
 #  ggplot2::facet_grid(vars(GearAbrv, Year))
   ggplot2::facet_grid(Year ~ GearAbrv)
 
+# Check missing data in histogram ------------------
+# Observation counts
+table(larval_dat$GearAbrv, larval_dat$Canyon, larval_dat$Year)
+# Look at data subset
+larval_dat %>%
+  dplyr::select(Year, GearAbrv, Canyon, MAX_GEAR_DEPTH) %>%
+  dplyr::filter(Year == 1993, GearAbrv == "MOC1")
