@@ -52,6 +52,7 @@ crs_out <- "EPSG:3338"
 # larval_dat<-read_excel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
 larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
                          sheet = "GrenadierLarvlxy_time_step_targ") %>%
+  dplyr::filter(!is.na(Canyon)) %>%
   dplyr::filter(!is.na(Corrected_Length)) %>%
   dplyr::arrange((Corrected_Length)) %>%
   dplyr::mutate(
@@ -95,7 +96,7 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
     ) # note that NA was not defined here. if something is not defined, it will be NA in the new column unless you species TRUE ~ "blah"
   ) %>% 
   # for troubleshooting ease, I am going to cut this table down to the necessary columns
-  dplyr::select(Year, Canyon, canyon_title, MAX_GEAR_DEPTH, 
+  dplyr::select(Year, Canyon, canyon_title, MAX_GEAR_DEPTH, GearAbrv,
                 Corrected_Length, size_bin_label, Latitude, Longitude) %>% 
   sf::st_as_sf(coords = c("Longitude", "Latitude"), 
                remove = FALSE,
@@ -168,22 +169,23 @@ return(p16)
 }
 
 ## Plot and save data for one year iteratively ---------------------------------
-for (i in c(1993, 2007, 2008)) {  
+for (i in c(1993, 2007, 2008, 2009)) {  
   aaa <- plot_p16(year0 = i) 
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.png"),
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16_2009.png"),
          plot=aaa, width=8, height=4)
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.tiff"),
+  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16_2009.tiff"),
          plot=aaa, width=8, height=4)
-  
+  aaa  #Added this code in order to see plot in Plot window
 }
 
 ## plot and save specific year(s) of data in one plot --------------------------
-yrs <- c(1993, 2007, 2008)
+yrs <- c(1993, 2007, 2008, 2009)
 aaa <- plot_p16(year0 = yrs)
-ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.png"),
+ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Test.png"),
        plot=aaa, width=8, height=4)
-ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16MaxGear.tiff"),
+ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Test.tiff"),
        plot=aaa, width=8, height=4)
+aaa
 
 # Plot maps of where grenadier were found by year ------------------------------
 
@@ -458,4 +460,18 @@ ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_
 ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.tiff"),
        plot=p17, width=8, height=4)
 
+# Depth histogram ----------------------------------------------------------
+ggplot2::ggplot(data = larval_dat,# %>%
+                # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
+                # dplyr::filter(!is.na(canyon_title)),
+                mapping = aes(
+                  # color = canyon_title, 
+                  fill = canyon_title, 
+                  x = MAX_GEAR_DEPTH))  +
+  ggplot2::geom_histogram(bins = 10) +
+  ggplot2::scale_fill_viridis_d(name = "Canyon") + 
+  ggplot2::theme_bw()+
+#  ggplot2::facet_wrap(vars(GearAbrv), ncol = 1)
+#  ggplot2::facet_grid(vars(GearAbrv, Year))
+  ggplot2::facet_grid(Year ~ GearAbrv)
 
