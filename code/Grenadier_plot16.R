@@ -96,7 +96,7 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
     ) # note that NA was not defined here. if something is not defined, it will be NA in the new column unless you species TRUE ~ "blah"
   ) %>% 
   # for troubleshooting ease, I am going to cut this table down to the necessary columns
-  dplyr::select(Year, Canyon, canyon_title, MAX_GEAR_DEPTH, GearAbrv,
+  dplyr::select(Year, Canyon, canyon_title, MAX_GEAR_DEPTH, MIN_GEAR_DEPTH, GearAbrv,
                 Corrected_Length, size_bin_label, Latitude, Longitude) %>% 
   sf::st_as_sf(coords = c("Longitude", "Latitude"), 
                remove = FALSE,
@@ -473,12 +473,59 @@ ggplot2::ggplot(data = larval_dat,# %>%
   ggplot2::theme_bw()+
 #  ggplot2::facet_wrap(vars(GearAbrv), ncol = 1)
 #  ggplot2::facet_grid(vars(GearAbrv, Year))
-  ggplot2::facet_grid(Year ~ GearAbrv)
+  ggplot2::facet_grid(Year ~ GearAbrv) + 
+  ggplot2::ggtitle("Max Gear Depth")
+
+ggplot2::ggplot(data = larval_dat,# %>%
+                # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
+                # dplyr::filter(!is.na(canyon_title)),
+                mapping = aes(
+                  # color = canyon_title, 
+                  fill = canyon_title, 
+                  x = MIN_GEAR_DEPTH))  +
+  ggplot2::geom_histogram(bins = 10) +
+  ggplot2::scale_fill_viridis_d(name = "Canyon") + 
+  ggplot2::theme_bw()+
+  #  ggplot2::facet_wrap(vars(GearAbrv), ncol = 1)
+  #  ggplot2::facet_grid(vars(GearAbrv, Year))
+  ggplot2::facet_grid(Year ~ GearAbrv) + 
+  ggplot2::ggtitle("Min Gear Depth")
+
+
+ggplot2::ggplot(data = larval_dat %>%
+                  # dplyr::filter(Year == 1993)  %>% # Remove line if want all gear type all years
+                  # dplyr::filter(GearAbrv != "60BON")  %>%
+                  dplyr::select(Latitude, canyon_title, GearAbrv, Year, MAX = MAX_GEAR_DEPTH, MIN = MIN_GEAR_DEPTH) %>%
+                  dplyr::mutate(MIN = dplyr::case_when(
+                    GearAbrv == "60BON" ~ MAX, 
+                    .default = MIN
+                  )) %>%
+                  dplyr::mutate(id = 1:nrow(.)), # %>% 
+                  # tidyr::pivot_longer(cols = c("MAX", "MIN"), 
+                  #                     names_to = "Location", 
+                  #                     values_to = "Depth"), 
+                # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
+                # dplyr::filter(!is.na(canyon_title)),
+                mapping = aes(
+                  color = canyon_title,
+                  # fill = canyon_title, 
+                  y = Latitude # id
+                  ))  +
+  ggplot2::geom_linerange(aes(xmin = MIN, xmax = MAX)) +
+  ggplot2::geom_point(mapping = aes(x = MIN)) + 
+  ggplot2::geom_point(mapping = aes(x = MAX)) + 
+  ggplot2::scale_color_viridis_d(name = "Canyon") + 
+  ggplot2::theme_bw()+
+  ggplot2::facet_grid(Year ~ GearAbrv) + 
+  ggplot2::geom_vline(xintercept = 200, color = "grey") + 
+  ggplot2::xlab("Depth Range (m)") +
+  ggplot2::ylab("Latitude °N") +
+  ggplot2::ggtitle("Max and Min Gear Depth (m) for Discrete Tows")
 
 # Check missing data in histogram ------------------
 # Observation counts
 table(larval_dat$GearAbrv, larval_dat$Canyon, larval_dat$Year)
 # Look at data subset
 larval_dat %>%
-  dplyr::select(Year, GearAbrv, Canyon, MAX_GEAR_DEPTH) %>%
+  dplyr::select(Year, GearAbrv, Canyon, MAX_GEAR_DEPTH, MIN_GEAR_DEPTH) %>%
   dplyr::filter(Year == 1993, GearAbrv == "MOC1")
