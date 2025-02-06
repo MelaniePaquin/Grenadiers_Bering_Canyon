@@ -768,6 +768,8 @@ t21 <- roms_dat1 %>%
   flextable::colformat_double(j = c("depth"), big.mark = "", digits = 0, na_str = "-") %>% # "year", 
     flextable::theme_vanilla() %>%
     flextable::width(width = 6.5/(ncol(dat))) %>% 
-  flextable::theme_zebra()
+  flextable::theme_zebra() %>% 
+  flextable::width(width = .75)%>% 
+  flextable::width(width = 1.5, j = "date")
   
 t21
