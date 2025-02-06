@@ -10,9 +10,9 @@
 # Here we list all the packages we will need for this whole process
 # We'll also use this in our works cited page!!!
 PKG <- c(
-
+  
   "devtools",
-
+  
   "ggplot2", # Create Elegant Data Visualizations Using the Grammar of Graphics
   "scales", # nicer labels in ggplot2
   "ggthemes",
@@ -40,7 +40,7 @@ for (p in PKG) {
     } else {
       install.packages(p)
     }
-  require(p,character.only = TRUE)}
+    require(p,character.only = TRUE)}
 }
 
 ## Define CRS ------------------------------------------------------------------
@@ -66,7 +66,7 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
     size_bin_label = as.character(size_bin1), 
     size_bin_label = paste0(
       as.numeric(gsub(pattern = "(", replacement = "", fixed = TRUE, 
-           x = sapply(strsplit(split = ",", x = size_bin_label, fixed = TRUE),"[[",1)))+.1,
+                      x = sapply(strsplit(split = ",", x = size_bin_label, fixed = TRUE),"[[",1)))+.1,
       "-", 
       gsub(pattern = "]", replacement = "", fixed = TRUE, 
            x = sapply(strsplit(split = ",", x = size_bin_label, fixed = TRUE),"[[",2)), 
@@ -111,61 +111,61 @@ write.csv(x = larval_dat,file = "./data/larval_dat_processed.csv")
 # Identify size bin color pallete ----------------------------------------------
 
 color_palette <- c("0.1-8 mm" = "grey",
-                    "8-10.5 mm" = "pink",
-                    "10.6-12.5 mm" = "blue",
-                    "12.6-14.5 mm" = "green",
-                    "14.6-16.5 mm" = "purple",
-                    "16.6-18.5 mm" = "gold",
-                    "18.6-20.5 mm" = "forestgreen", 
-                    "20.6-22.5 mm" = "cyan",# Addition of size bin titles
-                    "22.6-24.5 mm" = "gold",
-                    "24.6-100 mm" = "black")
+                   "8-10.5 mm" = "pink",
+                   "10.6-12.5 mm" = "blue",
+                   "12.6-14.5 mm" = "green",
+                   "14.6-16.5 mm" = "purple",
+                   "16.6-18.5 mm" = "gold",
+                   "18.6-20.5 mm" = "forestgreen", 
+                   "20.6-22.5 mm" = "cyan",# Addition of size bin titles
+                   "22.6-24.5 mm" = "gold",
+                   "24.6-100 mm" = "black")
 
 # Plot size bins by canyon and depth -------------------------------------------
 
 # since we are plotting this a few ways, we'll prepare plotting into a function
 
 plot_p16 <- function(year0) {
-p16 <- larval_dat %>%
-  dplyr::filter(Year %in% year0) %>% 
-  ggplot(mapping = aes(x = canyon_title, y = MAX_GEAR_DEPTH, color = size_bin_label))+
-  #Add line at 200 m depth
-  geom_hline(yintercept = 200, linewidth = 0.2, color="gray") +
-  # geom_jitter(mapping = aes(color = size_bin_label), # using geom_jitter instead of geom_point because points are being hidden
-  #            alpha = .5, 
-  #            width = .2,
-  #            height = 0,
-  #            size = 3) +
-  # Plot 1993 and 2008 with following conditions for jitter so plot looks correct
-  #geom_point(position=position_jitter(h=.05, w=0.3),
-             #mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
-  # Plot 2008 with following conditions for jitter so plot looks correct
-  #geom_point(position=position_jitter(h=.0, w=0.1),
-            #mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
-  geom_point(position=position_jitter(h=0, w=0.2), # geom_jitter values for 2007 but run multiple X to get horizontal spread
-             mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
+  p16 <- larval_dat %>%
+    dplyr::filter(Year %in% year0) %>% 
+    ggplot(mapping = aes(x = canyon_title, y = MAX_GEAR_DEPTH, color = size_bin_label))+
+    #Add line at 200 m depth
+    geom_hline(yintercept = 200, linewidth = 0.2, color="gray") +
+    # geom_jitter(mapping = aes(color = size_bin_label), # using geom_jitter instead of geom_point because points are being hidden
+    #            alpha = .5, 
+    #            width = .2,
+    #            height = 0,
+    #            size = 3) +
+    # Plot 1993 and 2008 with following conditions for jitter so plot looks correct
+    #geom_point(position=position_jitter(h=.05, w=0.3),
+    #mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
+    # Plot 2008 with following conditions for jitter so plot looks correct
+    #geom_point(position=position_jitter(h=.0, w=0.1),
+    #mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
+    geom_point(position=position_jitter(h=0, w=0.2), # geom_jitter values for 2007 but run multiple X to get horizontal spread
+               mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
+    
+    #reverse y-axis for depth
+    scale_y_reverse(limits = c(700, 0, by=25),
+                    expand = c(0.03, 0.03))+
+    facet_wrap(~Year, nrow = 5)+
+    labs(x = "Capture location",
+         y = "Maximum gear depth (m)",
+         title = "Grenadier larvae captures in the southeast Bering Sea showing maximum gear depth") + 
+    # manually define color for points
+    ggplot2::scale_color_manual(
+      values = color_palette,
+      name = "",
+      drop = TRUE) +
+    #Add theme backgrnd white###
+    theme_bw() +
+    theme(
+      # text = element_text(family = "monserrat"), # 
+      axis.line = element_line(),
+      panel.background = element_rect(fill = "#FFFFFF"),
+    )
   
-  #reverse y-axis for depth
-  scale_y_reverse(limits = c(700, 0, by=25),
-                  expand = c(0.03, 0.03))+
-  facet_wrap(~Year, nrow = 5)+
-  labs(x = "Capture location",
-       y = "Maximum gear depth (m)",
-       title = "Grenadier larvae captures in the southeast Bering Sea showing maximum gear depth") + 
-  # manually define color for points
-  ggplot2::scale_color_manual(
-    values = color_palette,
-    name = "",
-    drop = TRUE) +
-  #Add theme backgrnd white###
-  theme_bw() +
-  theme(
-    # text = element_text(family = "monserrat"), # 
-    axis.line = element_line(),
-    panel.background = element_rect(fill = "#FFFFFF"),
-  )
-
-return(p16)
+  return(p16)
 }
 
 ## Plot and save data for one year iteratively ---------------------------------
@@ -240,7 +240,7 @@ place_labels <- data.frame(
 ## Determine map boundaries ----------------------------------------------------
 
 boundaries <- data.frame(lon = c(-180, -160), # c(-180, -140)
-                        lat = c(50, 64) )  %>% # c(46, 66)
+                         lat = c(50, 64) )  %>% # c(46, 66)
   sf::st_as_sf(coords = c("lon", "lat"),
                crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
   sf::st_transform(crs = crs_out) %>% 
@@ -288,7 +288,7 @@ grenadier_codes <- c(21204, # Caelorinchus scaphopsis shoulderspot grenadier
                      21232, # Coryphaenoides cinereus popeye grenadier
                      21238, # Coryphaenoides filifer filamented grenadier
                      21239 # Coryphaenoides longifilis longfin grenadier
-                     )
+)
 
 for (i in grenadier_codes) {
   res <- httr::GET(url = paste0(
@@ -343,24 +343,24 @@ shp_bss <- akgfmaps::get_base_layers(select.region = "ebs.slope", set.crs = "aut
 
 shp_all <- shp <- dplyr::bind_rows(list(
   tidyr::crossing(shp_ebs$survey.area %>%
-    sf::st_transform(crs = crs_out), 
-    Year = surveyyrs$year[surveyyrs$srvy == "EBS"]) %>%
+                    sf::st_transform(crs = crs_out), 
+                  Year = surveyyrs$year[surveyyrs$srvy == "EBS"]) %>%
     dplyr::mutate(SURVEY = "EBS"),
   tidyr::crossing( shp_nbs$survey.area  %>%
-    sf::st_transform(crs = crs_out), 
-    Year = surveyyrs$year[surveyyrs$srvy == "NBS"]) %>%
+                     sf::st_transform(crs = crs_out), 
+                   Year = surveyyrs$year[surveyyrs$srvy == "NBS"]) %>%
     dplyr::mutate(SURVEY = "NBS"),
   tidyr::crossing(shp_ai$survey.area %>%
-    sf::st_transform(crs = crs_out), 
-    Year = surveyyrs$year[surveyyrs$srvy == "AI"]) %>%
+                    sf::st_transform(crs = crs_out), 
+                  Year = surveyyrs$year[surveyyrs$srvy == "AI"]) %>%
     dplyr::mutate(SURVEY = "AI"),
   tidyr::crossing(shp_goa$survey.area %>%
-    sf::st_transform(crs = crs_out), 
-    Year = surveyyrs$year[surveyyrs$srvy == "GOA"]) %>%
+                    sf::st_transform(crs = crs_out), 
+                  Year = surveyyrs$year[surveyyrs$srvy == "GOA"]) %>%
     dplyr::mutate(SURVEY = "GOA"),
-tidyr::crossing(shp_bss$survey.area %>%
-    sf::st_transform(crs = crs_out), 
-    Year = surveyyrs$year[surveyyrs$srvy == "BSS"]) %>%
+  tidyr::crossing(shp_bss$survey.area %>%
+                    sf::st_transform(crs = crs_out), 
+                  Year = surveyyrs$year[surveyyrs$srvy == "BSS"]) %>%
     dplyr::mutate(SURVEY = "BSS"))) %>%
   dplyr::select(Survey = SURVEY, geometry, Year)
 
@@ -383,7 +383,7 @@ p17 <- ggplot2::ggplot() +
   ggplot2::scale_y_continuous(name = "Latitude °N",
                               breaks = seq(50, 65, 5)) + # seq(52, 62, 2)
   ggplot2::facet_wrap(~Year) +
-    
+  
   ggplot2::geom_sf_text(
     data = place_labels %>% dplyr::filter(type == "mainland"),
     mapping = aes(label = lab, angle = angle), 
@@ -407,7 +407,7 @@ p17 <- ggplot2::ggplot() +
   ggplot2::geom_sf(
     data = gfdat, 
     mapping = aes(
-    size = cpue_kgkm2,
+      size = cpue_kgkm2,
       geometry = geometry),
     color = "red", 
     alpha = 0.7) + 
@@ -416,7 +416,7 @@ p17 <- ggplot2::ggplot() +
     data = larval_dat, 
     mapping = aes(
       color = size_bin_label,
-              geometry = geometry),
+      geometry = geometry),
     size = 3,
     alpha = 0.5) + 
   
@@ -460,8 +460,11 @@ ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_
 ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.tiff"),
        plot=p17, width=8, height=4)
 
-# Depth histogram ----------------------------------------------------------
-ggplot2::ggplot(data = larval_dat,# %>%
+# Gear by year depths histograms -----------------------------------------------
+
+## Max depth -------------------------------------------------------------------
+
+p18 <- ggplot2::ggplot(data = larval_dat,# %>%
                 # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
                 # dplyr::filter(!is.na(canyon_title)),
                 mapping = aes(
@@ -471,12 +474,16 @@ ggplot2::ggplot(data = larval_dat,# %>%
   ggplot2::geom_histogram(bins = 10) +
   ggplot2::scale_fill_viridis_d(name = "Canyon") + 
   ggplot2::theme_bw()+
-#  ggplot2::facet_wrap(vars(GearAbrv), ncol = 1)
-#  ggplot2::facet_grid(vars(GearAbrv, Year))
+  #  ggplot2::facet_wrap(vars(GearAbrv), ncol = 1)
+  #  ggplot2::facet_grid(vars(GearAbrv, Year))
   ggplot2::facet_grid(Year ~ GearAbrv) + 
   ggplot2::ggtitle("Max Gear Depth")
 
-ggplot2::ggplot(data = larval_dat,# %>%
+p18
+
+## Min depth -------------------------------------------------------------------
+
+p19 <- ggplot2::ggplot(data = larval_dat,# %>%
                 # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
                 # dplyr::filter(!is.na(canyon_title)),
                 mapping = aes(
@@ -491,8 +498,20 @@ ggplot2::ggplot(data = larval_dat,# %>%
   ggplot2::facet_grid(Year ~ GearAbrv) + 
   ggplot2::ggtitle("Min Gear Depth")
 
+p19
 
-ggplot2::ggplot(data = larval_dat %>%
+## Check missing data in histogram ----------------------------------------------
+
+# Observation counts
+table(larval_dat$GearAbrv, larval_dat$Canyon, larval_dat$Year)
+# Look at data subset
+larval_dat %>%
+  dplyr::select(Year, GearAbrv, Canyon, MAX_GEAR_DEPTH, MIN_GEAR_DEPTH) %>%
+  dplyr::filter(Year == 1993, GearAbrv == "MOC1")
+
+# Gear by year depths line range plots -----------------------------------------------
+
+p20 <- ggplot2::ggplot(data = larval_dat %>%
                   # dplyr::filter(Year == 1993)  %>% # Remove line if want all gear type all years
                   # dplyr::filter(GearAbrv != "60BON")  %>%
                   dplyr::select(Latitude, canyon_title, GearAbrv, Year, MAX = MAX_GEAR_DEPTH, MIN = MIN_GEAR_DEPTH) %>%
@@ -501,16 +520,16 @@ ggplot2::ggplot(data = larval_dat %>%
                     .default = MIN
                   )) %>%
                   dplyr::mutate(id = 1:nrow(.)), # %>% 
-                  # tidyr::pivot_longer(cols = c("MAX", "MIN"), 
-                  #                     names_to = "Location", 
-                  #                     values_to = "Depth"), 
+                # tidyr::pivot_longer(cols = c("MAX", "MIN"), 
+                #                     names_to = "Location", 
+                #                     values_to = "Depth"), 
                 # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
                 # dplyr::filter(!is.na(canyon_title)),
                 mapping = aes(
                   color = canyon_title,
                   # fill = canyon_title, 
                   y = Latitude # id
-                  ))  +
+                ))  +
   ggplot2::geom_linerange(aes(xmin = MIN, xmax = MAX)) +
   ggplot2::geom_point(mapping = aes(x = MIN)) + 
   ggplot2::geom_point(mapping = aes(x = MAX)) + 
@@ -522,10 +541,233 @@ ggplot2::ggplot(data = larval_dat %>%
   ggplot2::ylab("Latitude °N") +
   ggplot2::ggtitle("Max and Min Gear Depth (m) for Discrete Tows")
 
-# Check missing data in histogram ------------------
-# Observation counts
-table(larval_dat$GearAbrv, larval_dat$Canyon, larval_dat$Year)
-# Look at data subset
-larval_dat %>%
-  dplyr::select(Year, GearAbrv, Canyon, MAX_GEAR_DEPTH, MIN_GEAR_DEPTH) %>%
-  dplyr::filter(Year == 1993, GearAbrv == "MOC1")
+p20
+
+# Calculate distances from ROMS outputs ----------------------------------------
+
+roms_dat <- roms_dat_test <- matrix(
+  data = c(39500.0000,    192.0410,     54.7783,    192.0425,     54.7701,
+           39499.7500,    192.0425,     54.7701,    192.0442,     54.7619,
+           39499.5000,    192.0442,     54.7619,    192.0461,     54.7539,
+           39499.2500,    192.0461,     54.7539,    192.0482,     54.7459,
+           39499.0000,    192.0482,     54.7459,    192.0506,     54.7379), 
+  ncol = 5, byrow = TRUE) %>% 
+  data.frame() 
+
+names(roms_dat) <- c("gmt", "lon_start", "lat_start", "lon_end", "lat_end")
+
+# reformat data for next part of analysis
+roms_dat <- 
+  rbind.data.frame(
+    roms_dat %>% 
+      dplyr::select(gmt, lon = lon_start, lat = lat_start), 
+    roms_dat %>% 
+      dplyr::select(gmt, lon = lon_end, lat = lat_end) %>% 
+      dplyr::slice_tail(n = 1) %>% 
+      dplyr::mutate(gmt = gmt - .25)) # add 6 hours
+
+roms_dat <- roms_dat  %>% 
+  dplyr::arrange(gmt) %>%
+  dplyr::mutate(date = as.Date(gmt, origin = "1900-01-01 00:00"), 
+                time = 24*(gmt%%1), 
+                year = format(date, format = "%Y"), 
+                date_md = format(date, format = "%B %d"), 
+                date_mdy = format(date, format = "%B %d, %Y"), 
+                date = paste0(min(date_md), " - ", # " -\n", 
+                              max(date_mdy)),
+                event = c("Deployed", rep_len(length.out = (nrow(roms_dat)-2), NA), "End"), 
+                event = factor(event, ordered = TRUE))
+
+
+# fake data that we would automate while looping through through files
+# this will require some refining when I get the actual files
+roms_dat <- dplyr::bind_rows( # MOCK DATA FOR EXAMPLE
+  roms_dat %>% 
+    dplyr::mutate(#year = 2008, 
+                  depth = 0), 
+  roms_dat %>% 
+    dplyr::mutate(#year = 2008, 
+                  depth = 50), 
+  roms_dat %>% 
+    dplyr::mutate(#year = 2008, 
+                  depth = 100)
+  )  %>%
+  dplyr::mutate(depth = factor(depth, ordered = TRUE))
+
+# MOCK DATA FOR EXAMPLE
+roms_dat$lon = roms_dat$lon + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
+roms_dat$lat = roms_dat$lat + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
+# roms_dat$lon_end = roms_dat$lon_end + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
+# roms_dat$lat_end = roms_dat$lat_end + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
+
+# add geospatial to data
+roms_dat <- roms_dat %>% 
+  # make lat and lon into geospatial objects
+  sf::st_as_sf(coords = c("lon", "lat"), 
+                          agr = "constant", 
+               remove = FALSE, 
+               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
+  sf::st_transform(crs = crs_out) 
+
+roms_dat <- roms_dat %>% 
+  dplyr::bind_cols( roms_dat %>% 
+  sf::st_coordinates())
+
+# calculate distances between each geometry point
+comb <- unique(st_drop_geometry(roms_dat[,c("year", "depth")]))
+      
+roms_dat1 <- c()         
+for (ii in 1:nrow(comb)){
+  roms_dat0 <- roms_dat %>%
+    dplyr::filter(year == comb$year[ii] & 
+                    depth == comb$depth[ii]) %>% 
+    dplyr::mutate(dist = NA)
+  
+for (i in 2:(nrow(roms_dat0))){
+  # calculate distance between each point and its consequetive point
+  temp <- roms_dat0[(i-1):(i),] %>% 
+    # dplyr::filter(lon != 0) %>%
+    sf::st_distance()
+  # convert matrix unit from meters (m) to kilometers (km)
+  units(temp)$numerator <- "km"
+  roms_dat0$dist[i] <- temp[2,1] # pull distance from in the matrix and add to vector
+}
+roms_dat1 <- roms_dat1 %>% dplyr::bind_rows(roms_dat0)
+}
+roms_dat1$velocity <- roms_dat1$dist/6 # distance (m) over time (6 hours)
+
+
+### Create lines from points --------------------------------------------------
+
+roms_dat1_lines <- roms_dat1 %>%
+  # st_as_sf(coords = c("x", "y"), agr = "constant") %>%
+  group_by(date, depth) %>%
+  summarise(do_union = FALSE) %>%
+  st_cast("LINESTRING") 
+
+## map plot -------------------------------------------------------------------
+
+p21 <- ggplot2::ggplot() +
+
+  ### Map shapefile aesthetics ----------------------------------
+  # Manage Axis extents (limits) and breaks
+ggplot2::geom_sf(data = world_coordinates,
+                 fill = "grey10",
+                 color = "grey20")  + 
+  ggplot2::scale_x_continuous(name = "Longitude °W",
+                              breaks = seq(-180, -150, 5)) +
+  ggplot2::scale_y_continuous(name = "Latitude °N",
+                              breaks = seq(50, 65, 5)) + # seq(52, 62, 2)
+  
+  ggplot2::geom_sf_text(
+    data = place_labels %>% dplyr::filter(type == "mainland"),
+    mapping = aes(label = lab, angle = angle), 
+    color = "grey60", 
+    size = 3, 
+    show.legend = FALSE) + 
+  ggplot2::geom_sf_text(
+    data = place_labels %>% dplyr::filter(type == "survey"),
+    mapping = aes(label = lab, angle = angle), 
+    color = "black",
+    fontface = "bold",
+    size = 2, 
+    show.legend = FALSE) + 
+  ggplot2::geom_sf_text(
+    data = place_labels %>% dplyr::filter(!(type %in% c("mainland", "survey"))),
+    mapping = aes(label = lab, angle = angle), 
+    color = "grey10", 
+    fontface = "italic", 
+    size = 2, 
+    show.legend = FALSE) +
+  
+  ### Plot data ----------------------------------------------------------------
+
+  ggplot2::geom_sf(
+    data = roms_dat1_lines, 
+    mapping = aes(
+      # color = velocity,
+      color = depth,
+      # linetype = depth, 
+      geometry = geometry), 
+    alpha = 0.7,
+    linewidth = 2) + 
+  ggplot2::geom_sf(
+    data = roms_dat1, 
+    mapping = aes(
+      # color = velocity,
+      shape = event, 
+      color = depth,
+      geometry = geometry), 
+    # alpha = 0.7,
+    size = 3) + 
+  ggplot2::facet_wrap(~date) +
+  ggplot2::scale_color_viridis_d(name = "Depth (m)", option = "D", begin = .2, end = .8) + 
+  ggplot2::ggtitle(label = "Juvenile Grenider Modeled ROMS Dispersal", 
+                   subtitle = "At different depths, years, and environmental conditions") + 
+  ggplot2::scale_shape_discrete(name = "Event", 
+                                na.value = NA,
+                                na.translate = FALSE) +
+  
+  ### Plot aesthetics ----------------------------------
+
+  ggplot2::coord_sf(xlim = c(max(roms_dat1$X), min(roms_dat1$X)),
+                    ylim = c(max(roms_dat1$Y), min(roms_dat1$Y))) +
+  ggplot2::theme_bw() +
+  ggplot2::theme(
+    plot.margin=unit(c(0,0,0,0), "cm"), 
+    strip.background = element_rect(fill = "transparent", colour = "white"), 
+    strip.text = element_text(face = "bold"), # , family = font0
+    panel.border = element_rect(colour = "grey20", linewidth = .25, fill = NA),
+    panel.background = element_rect(fill = "white"), 
+    panel.grid = element_line(colour="grey80", linewidth = 0.5), 
+    plot.title = element_text(face = "bold"), # , size = 12, family = font0
+    axis.text = element_text(face = "bold"), # , size = 12 , family = font0
+    legend.key = element_blank(), 
+    legend.key.width = unit(0.6, "cm"),
+    legend.key.size = unit(0.6, "cm"),
+    legend.title = element_text(face = "bold"), # size = 10, , family = font0
+    legend.title.position = "top", 
+    legend.background = element_blank(),
+    # legend.text = element_text(size = 10, angle = 90),
+    legend.key.spacing = unit(0.0010, 'cm'), 
+    legend.position = "right", # "bottom",
+    legend.text.position = "right"# "bottom"
+  )
+
+
+p21
+
+ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.png"),
+       plot=p21, width=6, height=6)
+ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.tiff"),
+       plot=p21, width=6, height=6)
+
+### summary table -------------------------------------------------------------
+
+t21 <- roms_dat1 %>% 
+  dplyr::group_by(date, depth) %>% 
+  dplyr::summarise(dist_sum_km = sum(dist, na.rm = TRUE)/1000, 
+                   obs = n(), 
+                   vel_mean = mean(velocity, na.rm = TRUE), # dist/6, 
+                   vel_min = min(velocity, na.rm = TRUE), 
+                   vel_max = max(velocity, na.rm = TRUE)) %>% 
+  dplyr::ungroup() %>%
+  dplyr::mutate(depth = as.numeric(paste0(depth))) %>%
+  sf::st_drop_geometry() %>% 
+  dplyr::select(-obs) %>% # , -year
+  flextable::flextable()  %>% 
+    flextable::set_header_labels(date = "Date range",
+                                 depth = "Current Depth (m)",
+                                 dist_sum_km ="Distance traveled (km)",
+                                 vel_mean = "Mean velocity (km/hr)",
+                                 vel_min = "Low velocity (km/hr)",
+                                 vel_max = "High velocity (km/hr)"
+                                 ) %>%
+  flextable::merge_v(j = "date") %>%
+  flextable::colformat_double(big.mark = ",", digits = 2, na_str = "-") %>% 
+  flextable::colformat_double(j = c("depth"), big.mark = "", digits = 0, na_str = "-") %>% # "year", 
+    flextable::theme_vanilla() %>%
+    flextable::width(width = 6.5/(ncol(dat))) %>% 
+  flextable::theme_zebra()
+  
+t21
