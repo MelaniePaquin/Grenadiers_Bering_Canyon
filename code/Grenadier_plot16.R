@@ -545,16 +545,31 @@ p20
 
 # Calculate distances from ROMS outputs ----------------------------------------
 
-roms_dat <- roms_dat_test <- matrix(
-  data = c(39500.0000,    192.0410,     54.7783,    192.0425,     54.7701,
-           39499.7500,    192.0425,     54.7701,    192.0442,     54.7619,
-           39499.5000,    192.0442,     54.7619,    192.0461,     54.7539,
-           39499.2500,    192.0461,     54.7539,    192.0482,     54.7459,
-           39499.0000,    192.0482,     54.7459,    192.0506,     54.7379), 
-  ncol = 5, byrow = TRUE) %>% 
-  data.frame() 
+# "data/drftB_300m_1993_0429_6hrWCheng.pos"
 
-names(roms_dat) <- c("gmt", "lon_start", "lat_start", "lon_end", "lat_end")
+cols <- c("gmt", "lon_start", "lat_start", "lon_end", "lat_end")
+  
+roms_dat <- read.csv(file = "./data/drftB_300m_1993_0429_6hrWCheng.pos", header = FALSE) %>% 
+  data.frame() %>% 
+  dplyr::mutate(
+    V1 = gsub(x = V1, pattern = "    ", replacement = ",", fixed = TRUE), 
+    V1 = gsub(x = V1, pattern = " ", replacement = "", fixed = TRUE), 
+    V1 = paste0(V1, ",")) %>% 
+  tidyr::separate(col = "V1", into = c("gmt", "lon_start", "lat_start", "lon_end", "lat_end"), sep = ",") %>% 
+  data.frame() %>%
+  dplyr::mutate(dplyr::across(all_of(cols), as.numeric))
+
+
+# roms_dat <- roms_dat_test <- matrix(
+#   data = c(39500.0000,    192.0410,     54.7783,    192.0425,     54.7701,
+#            39499.7500,    192.0425,     54.7701,    192.0442,     54.7619,
+#            39499.5000,    192.0442,     54.7619,    192.0461,     54.7539,
+#            39499.2500,    192.0461,     54.7539,    192.0482,     54.7459,
+#            39499.0000,    192.0482,     54.7459,    192.0506,     54.7379), 
+#   ncol = 5, byrow = TRUE) %>% 
+#   data.frame() 
+# 
+# names(roms_dat) <- c("gmt", "lon_start", "lat_start", "lon_end", "lat_end")
 
 # reformat data for next part of analysis
 roms_dat <- 
@@ -567,6 +582,8 @@ roms_dat <-
       dplyr::mutate(gmt = gmt - .25)) # add 6 hours
 
 roms_dat <- roms_dat  %>% 
+  dplyr::mutate(depth = 300, 
+                filte = "drftB_300m_1993_0429_6hrWCheng") %>% 
   dplyr::arrange(gmt) %>%
   dplyr::mutate(date = as.Date(gmt, origin = "1900-01-01 00:00"), 
                 time = 24*(gmt%%1), 
@@ -576,27 +593,28 @@ roms_dat <- roms_dat  %>%
                 date = paste0(min(date_md), " - ", # " -\n", 
                               max(date_mdy)),
                 event = c("Deployed", rep_len(length.out = (nrow(roms_dat)-2), NA), "End"), 
-                event = factor(event, ordered = TRUE))
-
-
-# fake data that we would automate while looping through through files
-# this will require some refining when I get the actual files
-roms_dat <- dplyr::bind_rows( # MOCK DATA FOR EXAMPLE
-  roms_dat %>% 
-    dplyr::mutate(#year = 2008, 
-                  depth = 0), 
-  roms_dat %>% 
-    dplyr::mutate(#year = 2008, 
-                  depth = 50), 
-  roms_dat %>% 
-    dplyr::mutate(#year = 2008, 
-                  depth = 100)
-  )  %>%
+                event = factor(event, ordered = TRUE))  %>%
   dplyr::mutate(depth = factor(depth, ordered = TRUE))
 
+
+# # fake data that we would automate while looping through through files
+# # this will require some refining when I get the actual files
+# roms_dat <- dplyr::bind_rows( # MOCK DATA FOR EXAMPLE
+#   roms_dat %>% 
+#     dplyr::mutate(#year = 2008, 
+#                   depth = 0), 
+#   roms_dat %>% 
+#     dplyr::mutate(#year = 2008, 
+#                   depth = 50), 
+#   roms_dat %>% 
+#     dplyr::mutate(#year = 2008, 
+#                   depth = 100)
+#   )  %>%
+#   dplyr::mutate(depth = factor(depth, ordered = TRUE))
+
 # MOCK DATA FOR EXAMPLE
-roms_dat$lon = roms_dat$lon + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
-roms_dat$lat = roms_dat$lat + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
+# roms_dat$lon = roms_dat$lon + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
+# roms_dat$lat = roms_dat$lat + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
 # roms_dat$lon_end = roms_dat$lon_end + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
 # roms_dat$lat_end = roms_dat$lat_end + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
 
@@ -634,7 +652,8 @@ for (i in 2:(nrow(roms_dat0))){
 }
 roms_dat1 <- roms_dat1 %>% dplyr::bind_rows(roms_dat0)
 }
-roms_dat1$velocity <- roms_dat1$dist/6 # distance (m) over time (6 hours)
+roms_dat1$velocity_mhr <- roms_dat1$dist/6 # distance (km) over time (6 hours)
+roms_dat1$velocity <- roms_dat1$velocity_cms <- (roms_dat1$dist*100000)/(6*60*60) # distance (cm) over time (in secomds, 6 hours between)
 
 
 ### Create lines from points --------------------------------------------------
@@ -748,9 +767,9 @@ t21 <- roms_dat1 %>%
   dplyr::group_by(date, depth) %>% 
   dplyr::summarise(dist_sum_km = sum(dist, na.rm = TRUE)/1000, 
                    obs = n(), 
-                   vel_mean = mean(velocity, na.rm = TRUE), # dist/6, 
-                   vel_min = min(velocity, na.rm = TRUE), 
-                   vel_max = max(velocity, na.rm = TRUE)) %>% 
+                   vel_mean = mean(velocity_cms, na.rm = TRUE), # dist/6, 
+                   vel_min = min(velocity_cms, na.rm = TRUE), 
+                   vel_max = max(velocity_cms, na.rm = TRUE)) %>% 
   dplyr::ungroup() %>%
   dplyr::mutate(depth = as.numeric(paste0(depth))) %>%
   sf::st_drop_geometry() %>% 
@@ -759,9 +778,9 @@ t21 <- roms_dat1 %>%
     flextable::set_header_labels(date = "Date range",
                                  depth = "Current Depth (m)",
                                  dist_sum_km ="Distance traveled (km)",
-                                 vel_mean = "Mean velocity (km/hr)",
-                                 vel_min = "Low velocity (km/hr)",
-                                 vel_max = "High velocity (km/hr)"
+                                 vel_mean = "Mean velocity (cm/s)",
+                                 vel_min = "Low velocity (cm/s)",
+                                 vel_max = "High velocity (cm/s)"
                                  ) %>%
   flextable::merge_v(j = "date") %>%
   flextable::colformat_double(big.mark = ",", digits = 2, na_str = "-") %>% 
