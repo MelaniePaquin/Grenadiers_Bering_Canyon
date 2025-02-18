@@ -46,6 +46,7 @@ for (p in PKG) {
 ## Define CRS ------------------------------------------------------------------
 
 crs_out <- "EPSG:3338"
+crs_in <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 
 # Wrangle data -----------------------------------------------------------------
 
@@ -100,7 +101,7 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
                 Corrected_Length, size_bin_label, Latitude, Longitude) %>% 
   sf::st_as_sf(coords = c("Longitude", "Latitude"), 
                remove = FALSE,
-               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
+               crs = crs_in) %>%
   sf::st_transform(crs = crs_out)
 
 write.csv(x = larval_dat,file = "./data/larval_dat_processed.csv")
@@ -465,12 +466,12 @@ ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_
 ## Max depth -------------------------------------------------------------------
 
 p18 <- ggplot2::ggplot(data = larval_dat,# %>%
-                # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
-                # dplyr::filter(!is.na(canyon_title)),
-                mapping = aes(
-                  # color = canyon_title, 
-                  fill = canyon_title, 
-                  x = MAX_GEAR_DEPTH))  +
+                       # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
+                       # dplyr::filter(!is.na(canyon_title)),
+                       mapping = aes(
+                         # color = canyon_title, 
+                         fill = canyon_title, 
+                         x = MAX_GEAR_DEPTH))  +
   ggplot2::geom_histogram(bins = 10) +
   ggplot2::scale_fill_viridis_d(name = "Canyon") + 
   ggplot2::theme_bw()+
@@ -484,12 +485,12 @@ p18
 ## Min depth -------------------------------------------------------------------
 
 p19 <- ggplot2::ggplot(data = larval_dat,# %>%
-                # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
-                # dplyr::filter(!is.na(canyon_title)),
-                mapping = aes(
-                  # color = canyon_title, 
-                  fill = canyon_title, 
-                  x = MIN_GEAR_DEPTH))  +
+                       # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
+                       # dplyr::filter(!is.na(canyon_title)),
+                       mapping = aes(
+                         # color = canyon_title, 
+                         fill = canyon_title, 
+                         x = MIN_GEAR_DEPTH))  +
   ggplot2::geom_histogram(bins = 10) +
   ggplot2::scale_fill_viridis_d(name = "Canyon") + 
   ggplot2::theme_bw()+
@@ -512,24 +513,24 @@ larval_dat %>%
 # Gear by year depths line range plots -----------------------------------------------
 
 p20 <- ggplot2::ggplot(data = larval_dat %>%
-                  # dplyr::filter(Year == 1993)  %>% # Remove line if want all gear type all years
-                  # dplyr::filter(GearAbrv != "60BON")  %>%
-                  dplyr::select(Latitude, canyon_title, GearAbrv, Year, MAX = MAX_GEAR_DEPTH, MIN = MIN_GEAR_DEPTH) %>%
-                  dplyr::mutate(MIN = dplyr::case_when(
-                    GearAbrv == "60BON" ~ MAX, 
-                    .default = MIN
-                  )) %>%
-                  dplyr::mutate(id = 1:nrow(.)), # %>% 
-                # tidyr::pivot_longer(cols = c("MAX", "MIN"), 
-                #                     names_to = "Location", 
-                #                     values_to = "Depth"), 
-                # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
-                # dplyr::filter(!is.na(canyon_title)),
-                mapping = aes(
-                  color = canyon_title,
-                  # fill = canyon_title, 
-                  y = Latitude # id
-                ))  +
+                         # dplyr::filter(Year == 1993)  %>% # Remove line if want all gear type all years
+                         # dplyr::filter(GearAbrv != "60BON")  %>%
+                         dplyr::select(Latitude, canyon_title, GearAbrv, Year, MAX = MAX_GEAR_DEPTH, MIN = MIN_GEAR_DEPTH) %>%
+                         dplyr::mutate(MIN = dplyr::case_when(
+                           GearAbrv == "60BON" ~ MAX, 
+                           .default = MIN
+                         )) %>%
+                         dplyr::mutate(id = 1:nrow(.)), # %>% 
+                       # tidyr::pivot_longer(cols = c("MAX", "MIN"), 
+                       #                     names_to = "Location", 
+                       #                     values_to = "Depth"), 
+                       # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
+                       # dplyr::filter(!is.na(canyon_title)),
+                       mapping = aes(
+                         color = canyon_title,
+                         # fill = canyon_title, 
+                         y = Latitude # id
+                       ))  +
   ggplot2::geom_linerange(aes(xmin = MIN, xmax = MAX)) +
   ggplot2::geom_point(mapping = aes(x = MIN)) + 
   ggplot2::geom_point(mapping = aes(x = MAX)) + 
@@ -545,131 +546,104 @@ p20
 
 # Calculate distances from ROMS outputs ----------------------------------------
 
-# "data/drftB_300m_1993_0429_6hrWCheng.pos"
-
+a <- list.files(path = "data", pattern = "drftB", full.names = FALSE)
 cols <- c("gmt", "lon_start", "lat_start", "lon_end", "lat_end")
+roms_dat <- c()
+
+for (i in 1:length(a)) {
   
-roms_dat <- read.csv(file = "./data/drftB_300m_1993_0429_6hrWCheng.pos", header = FALSE) %>% 
-  data.frame() %>% 
+  temp <- read.csv(file = paste0("./data/", a[i]), header = FALSE) %>% 
+    data.frame() %>% 
+    dplyr::mutate(
+      V1 = gsub(x = V1, pattern = "    ", replacement = ",", fixed = TRUE), 
+      V1 = gsub(x = V1, pattern = " ", replacement = "", fixed = TRUE), 
+      V1 = paste0(V1, ",")) %>% 
+    tidyr::separate(col = "V1", into = c("gmt", "lon_start", "lat_start", "lon_end", "lat_end"), sep = ",") %>% 
+    data.frame() %>%
+    dplyr::mutate(dplyr::across(all_of(cols), as.numeric)) 
+  
+  # reformat data for next part of analysis Use the start columns and the last row of the end columns to create data format
+  temp <- 
+    rbind.data.frame(
+      temp %>% 
+        dplyr::select(gmt, lon = lon_start, lat = lat_start), 
+      temp %>% 
+        dplyr::select(gmt, lon = lon_end, lat = lat_end) %>% 
+        dplyr::slice_tail(n = 1) %>% 
+        dplyr::mutate(gmt = gmt - .25)) %>% # add 6 hours%>% 
+    dplyr::mutate(
+      filename = a[i], 
+      year = substr(start = 12, stop = 15, x= filename), 
+      depth_m = substr(start = 7, stop = 9, x= filename)) %>% 
+    # add date details for data plotting
+    dplyr::arrange(gmt) %>%
+    dplyr::mutate(
+      date = as.Date(gmt, origin = "1900-01-01 00:00"), 
+      time = 24*(gmt%%1), 
+      year = format(date, format = "%Y"), 
+      date_md = format(date, format = "%B %d"), 
+      date_mdy = format(date, format = "%B %d, %Y"), 
+      date = paste0(format(min(date), format = "%B %d"), " - ", # " -\n", 
+                    format(max(date), format = "%B %d, %Y")),
+      event = c("Start", rep_len(length.out = (nrow(.)-2), NA), "End"), 
+      event = factor(event, ordered = TRUE), 
+      dist_km = NA) %>% 
+    # add geospatial to data
+    sf::st_as_sf(coords = c("lon", "lat"), 
+                 agr = "constant", 
+                 remove = FALSE, 
+                 crs = crs_in) %>%
+    sf::st_transform(crs = crs_out)
+  
+  # add projected data points
+  temp <- temp %>% 
+    dplyr::bind_cols(temp %>% 
+                       sf::st_coordinates()) 
+  
+  for (ii in 2:(nrow(temp))){
+    # calculate distance between each point and its consecutive point
+    temp1 <- temp[(ii-1):(ii),] %>%
+      sf::st_distance()
+    # convert matrix unit from meters (m) to kilometers (km)
+    units(temp1)$numerator <- "km"
+    temp$dist_km[ii] <- temp1[2,1] # pull distance from in the matrix and add to vector
+  }
+  
+  roms_dat <- roms_dat %>%
+    dplyr::bind_rows(temp)
+}
+
+roms_dat <- roms_dat %>% 
+  dplyr::arrange(depth_m)  %>% 
+  dplyr::ungroup() %>%
   dplyr::mutate(
-    V1 = gsub(x = V1, pattern = "    ", replacement = ",", fixed = TRUE), 
-    V1 = gsub(x = V1, pattern = " ", replacement = "", fixed = TRUE), 
-    V1 = paste0(V1, ",")) %>% 
-  tidyr::separate(col = "V1", into = c("gmt", "lon_start", "lat_start", "lon_end", "lat_end"), sep = ",") %>% 
-  data.frame() %>%
-  dplyr::mutate(dplyr::across(all_of(cols), as.numeric))
-
-
-# roms_dat <- roms_dat_test <- matrix(
-#   data = c(39500.0000,    192.0410,     54.7783,    192.0425,     54.7701,
-#            39499.7500,    192.0425,     54.7701,    192.0442,     54.7619,
-#            39499.5000,    192.0442,     54.7619,    192.0461,     54.7539,
-#            39499.2500,    192.0461,     54.7539,    192.0482,     54.7459,
-#            39499.0000,    192.0482,     54.7459,    192.0506,     54.7379), 
-#   ncol = 5, byrow = TRUE) %>% 
-#   data.frame() 
-# 
-# names(roms_dat) <- c("gmt", "lon_start", "lat_start", "lon_end", "lat_end")
-
-# reformat data for next part of analysis
-roms_dat <- 
-  rbind.data.frame(
-    roms_dat %>% 
-      dplyr::select(gmt, lon = lon_start, lat = lat_start), 
-    roms_dat %>% 
-      dplyr::select(gmt, lon = lon_end, lat = lat_end) %>% 
-      dplyr::slice_tail(n = 1) %>% 
-      dplyr::mutate(gmt = gmt - .25)) # add 6 hours
-
-roms_dat <- roms_dat  %>% 
-  dplyr::mutate(depth = 300, 
-                filte = "drftB_300m_1993_0429_6hrWCheng") %>% 
-  dplyr::arrange(gmt) %>%
-  dplyr::mutate(date = as.Date(gmt, origin = "1900-01-01 00:00"), 
-                time = 24*(gmt%%1), 
-                year = format(date, format = "%Y"), 
-                date_md = format(date, format = "%B %d"), 
-                date_mdy = format(date, format = "%B %d, %Y"), 
-                date = paste0(min(date_md), " - ", # " -\n", 
-                              max(date_mdy)),
-                event = c("Deployed", rep_len(length.out = (nrow(roms_dat)-2), NA), "End"), 
-                event = factor(event, ordered = TRUE))  %>%
-  dplyr::mutate(depth = factor(depth, ordered = TRUE))
-
-
-# # fake data that we would automate while looping through through files
-# # this will require some refining when I get the actual files
-# roms_dat <- dplyr::bind_rows( # MOCK DATA FOR EXAMPLE
-#   roms_dat %>% 
-#     dplyr::mutate(#year = 2008, 
-#                   depth = 0), 
-#   roms_dat %>% 
-#     dplyr::mutate(#year = 2008, 
-#                   depth = 50), 
-#   roms_dat %>% 
-#     dplyr::mutate(#year = 2008, 
-#                   depth = 100)
-#   )  %>%
-#   dplyr::mutate(depth = factor(depth, ordered = TRUE))
-
-# MOCK DATA FOR EXAMPLE
-# roms_dat$lon = roms_dat$lon + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
-# roms_dat$lat = roms_dat$lat + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
-# roms_dat$lon_end = roms_dat$lon_end + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
-# roms_dat$lat_end = roms_dat$lat_end + rnorm(n = nrow(roms_dat), mean = 0, sd = 2)
-
-# add geospatial to data
-roms_dat <- roms_dat %>% 
-  # make lat and lon into geospatial objects
-  sf::st_as_sf(coords = c("lon", "lat"), 
-                          agr = "constant", 
-               remove = FALSE, 
-               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
-  sf::st_transform(crs = crs_out) 
-
-roms_dat <- roms_dat %>% 
-  dplyr::bind_cols( roms_dat %>% 
-  sf::st_coordinates())
-
-# calculate distances between each geometry point
-comb <- unique(st_drop_geometry(roms_dat[,c("year", "depth")]))
-      
-roms_dat1 <- c()         
-for (ii in 1:nrow(comb)){
-  roms_dat0 <- roms_dat %>%
-    dplyr::filter(year == comb$year[ii] & 
-                    depth == comb$depth[ii]) %>% 
-    dplyr::mutate(dist = NA)
-  
-for (i in 2:(nrow(roms_dat0))){
-  # calculate distance between each point and its consequetive point
-  temp <- roms_dat0[(i-1):(i),] %>% 
-    # dplyr::filter(lon != 0) %>%
-    sf::st_distance()
-  # convert matrix unit from meters (m) to kilometers (km)
-  units(temp)$numerator <- "km"
-  roms_dat0$dist[i] <- temp[2,1] # pull distance from in the matrix and add to vector
-}
-roms_dat1 <- roms_dat1 %>% dplyr::bind_rows(roms_dat0)
-}
-roms_dat1$velocity_mhr <- roms_dat1$dist/6 # distance (km) over time (6 hours)
-roms_dat1$velocity <- roms_dat1$velocity_cms <- (roms_dat1$dist*100000)/(6*60*60) # distance (cm) over time (in secomds, 6 hours between)
-
+    year = factor(year, ordered = TRUE), 
+    dist_nmi = dist_km/1.852, 
+    depth_m = factor(depth_m, ordered = TRUE), 
+    # velocity_kmhr = dist_km/6, # distance (km) over time (6 hours)
+    velocity_cms = (dist_km*100000)/(60*60*6) ) # distance (cm) over time (in seconds, 6 hours between)
 
 ### Create lines from points --------------------------------------------------
 
-roms_dat1_lines <- roms_dat1 %>%
-  # st_as_sf(coords = c("x", "y"), agr = "constant") %>%
-  group_by(date, depth) %>%
-  summarise(do_union = FALSE) %>%
-  st_cast("LINESTRING") 
+roms_dat_lines <- roms_dat %>%
+  dplyr::group_by(date, year, depth_m) %>%
+  dplyr::summarise(
+    do_union = FALSE,
+    dist_km_sum = sum(dist_km, na.rm = TRUE), 
+    dist_nmi_sum = sum(dist_nmi, na.rm = TRUE), 
+    obs = n(), 
+    vel_mean = mean(velocity_cms, na.rm = TRUE), 
+    vel_min = min(velocity_cms, na.rm = TRUE), 
+    vel_max = max(velocity_cms, na.rm = TRUE)) %>% 
+  sf::st_cast("LINESTRING") %>% 
+  dplyr::ungroup()
 
 ## map plot -------------------------------------------------------------------
 
 p21 <- ggplot2::ggplot() +
-
+  
   ### Map shapefile aesthetics ----------------------------------
-  # Manage Axis extents (limits) and breaks
+# Manage Axis extents (limits) and breaks
 ggplot2::geom_sf(data = world_coordinates,
                  fill = "grey10",
                  color = "grey20")  + 
@@ -701,21 +675,19 @@ ggplot2::geom_sf(data = world_coordinates,
   
   ### Plot data ----------------------------------------------------------------
 
+ggplot2::geom_sf(
+  data = roms_dat_lines, 
+  mapping = aes(
+    color = depth_m,
+    # linetype = depth_m, 
+    geometry = geometry), 
+  alpha = 0.7,
+  linewidth = 2) + 
   ggplot2::geom_sf(
-    data = roms_dat1_lines, 
+    data = roms_dat, 
     mapping = aes(
-      # color = velocity,
-      color = depth,
-      # linetype = depth, 
-      geometry = geometry), 
-    alpha = 0.7,
-    linewidth = 2) + 
-  ggplot2::geom_sf(
-    data = roms_dat1, 
-    mapping = aes(
-      # color = velocity,
       shape = event, 
-      color = depth,
+      color = depth_m,
       geometry = geometry), 
     # alpha = 0.7,
     size = 3) + 
@@ -729,8 +701,8 @@ ggplot2::geom_sf(data = world_coordinates,
   
   ### Plot aesthetics ----------------------------------
 
-  ggplot2::coord_sf(xlim = c(max(roms_dat1$X), min(roms_dat1$X)),
-                    ylim = c(max(roms_dat1$Y), min(roms_dat1$Y))) +
+ggplot2::coord_sf(xlim = c(max(roms_dat$X), min(roms_dat$X)),
+                  ylim = c(max(roms_dat$Y), min(roms_dat$Y))) +
   ggplot2::theme_bw() +
   ggplot2::theme(
     plot.margin=unit(c(0,0,0,0), "cm"), 
@@ -763,32 +735,123 @@ ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.tiff"),
 
 ### summary table -------------------------------------------------------------
 
-t21 <- roms_dat1 %>% 
-  dplyr::group_by(date, depth) %>% 
-  dplyr::summarise(dist_sum_km = sum(dist, na.rm = TRUE)/1000, 
-                   obs = n(), 
-                   vel_mean = mean(velocity_cms, na.rm = TRUE), # dist/6, 
-                   vel_min = min(velocity_cms, na.rm = TRUE), 
-                   vel_max = max(velocity_cms, na.rm = TRUE)) %>% 
-  dplyr::ungroup() %>%
-  dplyr::mutate(depth = as.numeric(paste0(depth))) %>%
+t21 <- roms_dat_lines %>% 
+  dplyr::mutate(depth_m = as.numeric(paste0(depth_m))) %>%
   sf::st_drop_geometry() %>% 
-  dplyr::select(-obs) %>% # , -year
+  dplyr::select(-obs, -year) %>% 
   flextable::flextable()  %>% 
-    flextable::set_header_labels(date = "Date range",
-                                 depth = "Current Depth (m)",
-                                 dist_sum_km ="Distance traveled (km)",
-                                 vel_mean = "Mean velocity (cm/s)",
-                                 vel_min = "Low velocity (cm/s)",
-                                 vel_max = "High velocity (cm/s)"
-                                 ) %>%
+  flextable::set_header_labels(
+    date = "Date range",
+    depth_m = "Current Depth (m)",
+    dist_km_sum ="Distance traveled (km)",
+    dist_nmi_sum ="Distance traveled (nmi)",
+    vel_mean = "Mean current speed (cm/s)",
+    vel_min = "Low current speed (cm/s)",
+    vel_max = "High current speed (cm/s)"
+  ) %>%
   flextable::merge_v(j = "date") %>%
-  flextable::colformat_double(big.mark = ",", digits = 2, na_str = "-") %>% 
-  flextable::colformat_double(j = c("depth"), big.mark = "", digits = 0, na_str = "-") %>% # "year", 
-    flextable::theme_vanilla() %>%
-    flextable::width(width = 6.5/(ncol(dat))) %>% 
+  flextable::colformat_double(
+    big.mark = ",", 
+    digits = 2, 
+    na_str = "-") %>% 
+  flextable::colformat_double(
+    j = c("depth_m"), 
+    big.mark = "", 
+    digits = 0, 
+    na_str = "-") %>% 
+  flextable::theme_vanilla() %>%
+  flextable::width(width = 6.5/(7)) %>% 
   flextable::theme_zebra() %>% 
   flextable::width(width = .75)%>% 
   flextable::width(width = 1.5, j = "date")
-  
+
 t21
+
+### Compare -------------
+
+roms_dat_forcompare <- roms_dat %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::mutate(
+    depth_m = as.numeric(paste0(depth_m)),
+    year = as.numeric(paste0(year)), 
+    lat_rad_recalc = lat*pi/180, 
+    lon_rad_recalc = lon*pi/180,
+    lat_rad_diff_recalc = NA,
+    lon_rad_diff_recalc = NA) 
+
+for (i in 2:nrow(roms_dat_forcompare)) {
+  roms_dat_forcompare$lat_rad_diff_recalc[i] <- (roms_dat_forcompare$lat_rad_recalc[i] - roms_dat_forcompare$lat_rad_recalc[i-1])
+  roms_dat_forcompare$lon_rad_diff_recalc[i] <- (roms_dat_forcompare$lon_rad_recalc[i] - roms_dat_forcompare$lon_rad_recalc[i-1])
+  roms_dat_forcompare$dist_nmi_recalc[i] <- # in excel: # ACOS((SIN(R9)*SIN(R10))+(COS(R9)*COS(R10)*COS(T10)))/(PI()/180)*60
+    acos((sin(roms_dat_forcompare$lat_rad_recalc[i-1])*sin(roms_dat_forcompare$lat_rad_recalc[i]))+
+           (cos(roms_dat_forcompare$lat_rad_recalc[i-1])*cos(roms_dat_forcompare$lat_rad_recalc[i])*
+              cos(roms_dat_forcompare$lon_rad_diff_recalc[i])))/(pi/180)*60 
+}
+
+roms_dat_forcompare <- roms_dat_forcompare %>% 
+  dplyr::mutate(
+    dist_km_recalc = dist_nmi_recalc*1.852
+  ) %>% 
+  dplyr::select(gmt, lat, lon, year, depth_m, 
+                dist_nmi_r = dist_nmi, 
+                dist_km_r = dist_km, 
+                dist_nmi_recalc, 
+                dist_km_recalc)
+
+compare_roms_outputs_dat <- read_excel(
+  path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
+  skip = 5) %>% 
+  janitor::clean_names() %>% 
+  dplyr::select(lat = dec_lat, lon = dec_long, dist_nmi_excel = distance_nm) %>% 
+  dplyr::mutate(lon = lon*-1, 
+    depth_m = 300, 
+    year = 1993, 
+    dist_km_excel = dist_nmi_excel*1.852) %>% 
+  dplyr::filter(!is.na(lat)) %>%
+  # add roms data to this table for comparison
+  dplyr::full_join(roms_dat_forcompare %>% # compare all available data
+                     dplyr::filter(year == 1993, depth_m == 300)) %>% 
+  # dplyr::left_join(roms_dat_forcompare) %>% # compare only data in excel
+  dplyr::mutate(
+    dist_km_diff_recalc = dist_km_excel - dist_km_recalc, 
+    dist_km_diff_recalc = dist_km_r - dist_km_recalc, 
+    dist_km_diff = dist_km_r - dist_km_excel, 
+    dist_nmi_diff_recalc = dist_nmi_excel - dist_nmi_recalc, 
+    dist_nmi_diff_recalc = dist_nmi_r - dist_nmi_recalc, 
+    dist_nmi_diff = dist_nmi_r - dist_nmi_excel) %>% 
+  dplyr::relocate(gmt, year, lat, lon, depth_m, dist_nmi_excel, dist_nmi_r, dist_km_excel, dist_km_r)
+
+write.csv(x = compare_roms_outputs_dat, file = here::here("output/compare_roms_outputs_dat.csv"))
+
+compare_roms_outputs_dat_sums <- compare_roms_outputs_dat %>% 
+  dplyr::group_by(depth_m, year) %>%
+  dplyr::summarise(
+    dist_km_r = sum(dist_km_r, na.rm = TRUE), 
+    dist_km_excel = sum(dist_km_excel, na.rm = TRUE), 
+    dist_km_recalc = sum(dist_km_recalc, na.rm = TRUE), 
+    dist_nmi_r = sum(dist_nmi_r, na.rm = TRUE), 
+    dist_nmi_excel = sum(dist_nmi_excel, na.rm = TRUE), 
+    dist_nmi_recalc = sum(dist_nmi_recalc, na.rm = TRUE), 
+    dist_km_diff = sum(dist_km_diff, na.rm = TRUE), 
+    dist_nmi_diff = sum(dist_nmi_diff, na.rm = TRUE)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+    dist_km_diff_tot_excel_r = dist_km_excel - dist_km_r,
+    dist_km_diff_tot_excel_recalc = dist_km_excel - dist_km_recalc,
+    dist_nmi_diff_tot_excel_r = dist_nmi_excel - dist_nmi_r, 
+    dist_nmi_diff_tot_excel_recalc = dist_nmi_excel - dist_nmi_recalc, 
+    obs_excel = read_excel(
+    path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
+    skip = 5) %>% 
+      janitor::clean_names() %>% 
+      dplyr::select(lat) %>% 
+      dplyr::filter(!is.na(lat)) %>% 
+      nrow(), 
+    obs_r = nrow(temp))
+
+summary(compare_roms_outputs_dat)
+
+t(compare_roms_outputs_dat_sums)
+
+  
+
