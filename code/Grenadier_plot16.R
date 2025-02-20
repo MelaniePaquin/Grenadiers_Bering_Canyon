@@ -8,7 +8,7 @@
 # Install Libraries ------------------------------------------------------------
 
 # Here we list all the packages we will need for this whole process
-# We'll also use this in our works cited page!!!
+# We'll also use this in our works cited page!
 PKG <- c(
   
   "devtools",
@@ -28,8 +28,8 @@ PKG <- c(
   "stringi",
   "akgfmaps", # RACE-GAP Specific # devtools::install_github("afsc-gap-products/akgfmaps", build_vignettes = TRUE)
   "pingr", # check website links
-  "httr" # check website links
-  # "flextable", # making pretty tables
+  "httr", # check website links
+  "flextable" # making pretty tables
 )
 
 PKG <- unique(PKG)
@@ -50,9 +50,9 @@ crs_in <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 
 # Wrangle data -----------------------------------------------------------------
 
-# larval_dat<-read_excel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
-larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
-                         sheet = "GrenadierLarvlxy_time_step_targ") %>%
+# larval_dat<-read_radiansexcel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
+larval_dat <- read_radiansexcel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
+                                sheet = "GrenadierLarvlxy_time_step_targ") %>%
   dplyr::filter(!is.na(Canyon)) %>%
   dplyr::filter(!is.na(Corrected_Length)) %>%
   dplyr::arrange((Corrected_Length)) %>%
@@ -586,42 +586,66 @@ for (i in 1:length(a)) {
       date = paste0(format(min(date), format = "%B %d"), " - ", # " -\n", 
                     format(max(date), format = "%B %d, %Y")),
       event = c("Start", rep_len(length.out = (nrow(.)-2), NA), "End"), 
-      event = factor(event, ordered = TRUE), 
-      dist_km = NA) %>% 
+      event = factor(event, ordered = TRUE)) %>% 
     # add geospatial to data
     sf::st_as_sf(coords = c("lon", "lat"), 
                  agr = "constant", 
                  remove = FALSE, 
                  crs = crs_in) %>%
-    sf::st_transform(crs = crs_out)
+    sf::st_transform(crs = crs_out) %>% 
+    dplyr::mutate( 
+      lat_rad = lat*pi/180, 
+      lon_rad = lon*pi/180, 
+      lat_rad_diff = NA, 
+      lon_rad_diff = NA, 
+      dist_km_projected = NA, 
+      dist_nmi_radians = NA)
   
   # add projected data points
-  temp <- temp %>% 
-    dplyr::bind_cols(temp %>% 
-                       sf::st_coordinates()) 
+  temp <- temp %>%
+    dplyr::bind_cols(temp %>%
+                       sf::st_coordinates())
+
   
+  # calculate distance between each point and its consecutive point
   for (ii in 2:(nrow(temp))){
-    # calculate distance between each point and its consecutive point
+    # CALCULATE DISTANCE WITH SF PROJECTION ESPG:3338
     temp1 <- temp[(ii-1):(ii),] %>%
       sf::st_distance()
-    # convert matrix unit from meters (m) to kilometers (km)
-    units(temp1)$numerator <- "km"
-    temp$dist_km[ii] <- temp1[2,1] # pull distance from in the matrix and add to vector
+    units(temp1)$numerator <- "km" # convert matrix unit from meters (m) to kilometers (km)
+    temp$dist_km_projected[ii] <- temp1[2,1] # pull distance from in the matrix and add to vector
+
+    ## CALCULATE DISTANCE IN RADIAN
+    temp$lat_rad_diff[ii] <- (temp$lat_rad[ii] - temp$lat_rad[ii+1])
+    temp$lon_rad_diff[ii] <- (temp$lon_rad[ii] - temp$lon_rad[ii+1])
+    temp$dist_nmi_radians[ii] <- # in excel: # ACOS((SIN(R9)*SIN(R10))+(COS(R9)*COS(R10)*COS(T10)))/(PI()/180)*60
+      acos((sin(temp$lat_rad[ii+1])*sin(temp$lat_rad[ii])) +
+             (cos(temp$lat_rad[ii+1])*cos(temp$lat_rad[ii])*
+                cos(temp$lon_rad_diff[ii])))/(pi/180)*60 
   }
+  
+  temp <- temp %>% 
+    dplyr::mutate(
+      dist_km_radians = dist_nmi_radians*1.852, 
+      dist_nmi_projected = dist_km_projected/1.852
+    ) 
   
   roms_dat <- roms_dat %>%
     dplyr::bind_rows(temp)
 }
 
 roms_dat <- roms_dat %>% 
-  dplyr::arrange(depth_m)  %>% 
   dplyr::ungroup() %>%
+  dplyr::arrange(depth_m)  %>% 
   dplyr::mutate(
     year = factor(year, ordered = TRUE), 
-    dist_nmi = dist_km/1.852, 
     depth_m = factor(depth_m, ordered = TRUE), 
+    dist_km = dist_km_radians, 
+    dist_nmi = dist_nmi_radians,
     # velocity_kmhr = dist_km/6, # distance (km) over time (6 hours)
-    velocity_cms = (dist_km*100000)/(60*60*6) ) # distance (cm) over time (in seconds, 6 hours between)
+    velocity_cms = (dist_km_radians*100000)/(60*60*6) # distance (cm) over time (in seconds, 6 hours between)
+ ) %>% 
+  dplyr::filter(gmt > 34015.75)
 
 ### Create lines from points --------------------------------------------------
 
@@ -767,59 +791,88 @@ t21 <- roms_dat_lines %>%
 
 t21
 
-### Compare -------------
+### compare -------------
 
-roms_dat_forcompare <- roms_dat %>% 
+# temp <- roms_dat %>% 
+#   sf::st_drop_geometry() %>% 
+#   dplyr::mutate(
+#     depth_m = as.numeric(paste0(depth_m)),
+#     year = as.numeric(paste0(year)), 
+#     lat_rad_radians = lat*pi/180, 
+#     lon_rad_radians = lon*pi/180, 
+#     lat_rad_diff_radians = NA, 
+#     lon_rad_diff_radians = NA) 
+# 
+# for (i in 2:nrow(temp)) {
+#   temp$lat_rad_diff_radians[i] <- (temp$lat_rad_radians[i] - temp$lat_rad_radians[i-1])
+#   temp$lon_rad_diff_radians[i] <- (temp$lon_rad_radians[i] - temp$lon_rad_radians[i-1])
+#   temp$dist_nmi_radians[i] <- # in excel: # ACOS((SIN(R9)*SIN(R10))+(COS(R9)*COS(R10)*COS(T10)))/(PI()/180)*60
+#     acos((sin(temp$lat_rad_radians[i-1])*sin(temp$lat_rad_radians[i]))+
+#            (cos(temp$lat_rad_radians[i-1])*cos(temp$lat_rad_radians[i])*
+#               cos(temp$lon_rad_diff_radians[i])))/(pi/180)*60 
+# }
+# 
+# temp <- temp %>% 
+#   dplyr::mutate(
+#     dist_km_radians = dist_nmi_radians*1.852
+#   ) %>% 
+#   dplyr::select(gmt, lat, lon, year, depth_m, 
+#                 dist_nmi_r = dist_nmi, 
+#                 dist_km_r = dist_km, 
+#                 dist_nmi_radians, 
+#                 dist_km_radians)
+
+temp <- roms_dat %>% # compare all available data
   sf::st_drop_geometry() %>% 
+  dplyr::filter(
+    year == 1993 &
+      depth_m == 300) %>% 
   dplyr::mutate(
-    depth_m = as.numeric(paste0(depth_m)),
+    # gmt = gmt + 0.25,
     year = as.numeric(paste0(year)), 
-    lat_rad_recalc = lat*pi/180, 
-    lon_rad_recalc = lon*pi/180,
-    lat_rad_diff_recalc = NA,
-    lon_rad_diff_recalc = NA) 
-
-for (i in 2:nrow(roms_dat_forcompare)) {
-  roms_dat_forcompare$lat_rad_diff_recalc[i] <- (roms_dat_forcompare$lat_rad_recalc[i] - roms_dat_forcompare$lat_rad_recalc[i-1])
-  roms_dat_forcompare$lon_rad_diff_recalc[i] <- (roms_dat_forcompare$lon_rad_recalc[i] - roms_dat_forcompare$lon_rad_recalc[i-1])
-  roms_dat_forcompare$dist_nmi_recalc[i] <- # in excel: # ACOS((SIN(R9)*SIN(R10))+(COS(R9)*COS(R10)*COS(T10)))/(PI()/180)*60
-    acos((sin(roms_dat_forcompare$lat_rad_recalc[i-1])*sin(roms_dat_forcompare$lat_rad_recalc[i]))+
-           (cos(roms_dat_forcompare$lat_rad_recalc[i-1])*cos(roms_dat_forcompare$lat_rad_recalc[i])*
-              cos(roms_dat_forcompare$lon_rad_diff_recalc[i])))/(pi/180)*60 
-}
-
-roms_dat_forcompare <- roms_dat_forcompare %>% 
-  dplyr::mutate(
-    dist_km_recalc = dist_nmi_recalc*1.852
-  ) %>% 
+    depth_m = as.numeric(paste0(depth_m))) %>% 
   dplyr::select(gmt, lat, lon, year, depth_m, 
-                dist_nmi_r = dist_nmi, 
-                dist_km_r = dist_km, 
-                dist_nmi_recalc, 
-                dist_km_recalc)
+                dist_nmi_projected, dist_km_projected, 
+                dist_nmi_radians, dist_km_radians)
 
 compare_roms_outputs_dat <- read_excel(
   path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
   skip = 5) %>% 
   janitor::clean_names() %>% 
-  dplyr::select(lat = dec_lat, lon = dec_long, dist_nmi_excel = distance_nm) %>% 
+  dplyr::select(lat = dec_lat, lon = dec_long, dist_nmi_radiansexcel = distance_nm) %>% 
   dplyr::mutate(lon = lon*-1, 
-    depth_m = 300, 
-    year = 1993, 
-    dist_km_excel = dist_nmi_excel*1.852) %>% 
+                depth_m = 300, 
+                year = 1993, 
+                dist_km_radiansexcel = dist_nmi_radiansexcel*1.852) %>% 
   dplyr::filter(!is.na(lat)) %>%
+  # dplyr::full_join(
+  #   temp %>% 
+  #     dplyr::select(gmt, lat, lon, year, depth_m)
+  # ) %>% 
   # add roms data to this table for comparison
-  dplyr::full_join(roms_dat_forcompare %>% # compare all available data
-                     dplyr::filter(year == 1993, depth_m == 300)) %>% 
-  # dplyr::left_join(roms_dat_forcompare) %>% # compare only data in excel
+  dplyr::full_join(temp) %>%
+  # dplyr::left_join(temp) %>% # compare only data in excel
   dplyr::mutate(
-    dist_km_diff_recalc = dist_km_excel - dist_km_recalc, 
-    dist_km_diff_recalc = dist_km_r - dist_km_recalc, 
-    dist_km_diff = dist_km_r - dist_km_excel, 
-    dist_nmi_diff_recalc = dist_nmi_excel - dist_nmi_recalc, 
-    dist_nmi_diff_recalc = dist_nmi_r - dist_nmi_recalc, 
-    dist_nmi_diff = dist_nmi_r - dist_nmi_excel) %>% 
-  dplyr::relocate(gmt, year, lat, lon, depth_m, dist_nmi_excel, dist_nmi_r, dist_km_excel, dist_km_r)
+    dist_km_diff_radians_radiansexcel = dist_km_radians - dist_km_radiansexcel, 
+    dist_km_diff_projected_radians = dist_km_projected - dist_km_radians, 
+    dist_km_diff_projected_radiansexcel = dist_km_projected - dist_km_radiansexcel, 
+    dist_nmi_diff_radians_radiansexcel = dist_nmi_radians - dist_nmi_radiansexcel, 
+    dist_nmi_diff_projected_radians = dist_nmi_projected - dist_nmi_radians, 
+    dist_nmi_diff_projected_radiansexcel = dist_nmi_projected - dist_nmi_radiansexcel
+  ) %>% 
+  dplyr::relocate(gmt, year, lat, lon, depth_m, 
+                  dist_km_projected, 
+                  dist_km_radians, 
+                  dist_km_radiansexcel, 
+                  dist_km_diff_radians_radiansexcel, 
+                  dist_km_diff_projected_radians, 
+                  dist_km_diff_projected_radiansexcel, 
+                  dist_nmi_projected, 
+                  dist_nmi_radians, 
+                  dist_nmi_radiansexcel, 
+                  dist_nmi_diff_radians_radiansexcel, 
+                  dist_nmi_diff_projected_radians, 
+                  dist_nmi_diff_projected_radiansexcel)
 
 write.csv(x = compare_roms_outputs_dat, file = here::here("output/compare_roms_outputs_dat.csv"))
 
@@ -827,22 +880,22 @@ compare_roms_outputs_dat_sums <- compare_roms_outputs_dat %>%
   dplyr::group_by(depth_m, year) %>%
   dplyr::summarise(
     dist_km_r = sum(dist_km_r, na.rm = TRUE), 
-    dist_km_excel = sum(dist_km_excel, na.rm = TRUE), 
-    dist_km_recalc = sum(dist_km_recalc, na.rm = TRUE), 
+    dist_km_radiansexcel = sum(dist_km_radiansexcel, na.rm = TRUE), 
+    dist_km_radians = sum(dist_km_radians, na.rm = TRUE), 
     dist_nmi_r = sum(dist_nmi_r, na.rm = TRUE), 
-    dist_nmi_excel = sum(dist_nmi_excel, na.rm = TRUE), 
-    dist_nmi_recalc = sum(dist_nmi_recalc, na.rm = TRUE), 
+    dist_nmi_radians_radiansexcel = sum(dist_nmi_radians_radiansexcel, na.rm = TRUE), 
+    dist_nmi_radians = sum(dist_nmi_radians, na.rm = TRUE), 
     dist_km_diff = sum(dist_km_diff, na.rm = TRUE), 
     dist_nmi_diff = sum(dist_nmi_diff, na.rm = TRUE)) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(
-    dist_km_diff_tot_excel_r = dist_km_excel - dist_km_r,
-    dist_km_diff_tot_excel_recalc = dist_km_excel - dist_km_recalc,
-    dist_nmi_diff_tot_excel_r = dist_nmi_excel - dist_nmi_r, 
-    dist_nmi_diff_tot_excel_recalc = dist_nmi_excel - dist_nmi_recalc, 
-    obs_excel = read_excel(
-    path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
-    skip = 5) %>% 
+    dist_km_diff_tot_radiansexcel_r = dist_km_radiansexcel - dist_km_r,
+    dist_km_diff_tot_radiansexcel_radians = dist_km_radiansexcel - dist_km_radians,
+    dist_nmi_diff_tot_radiansexcel_r = dist_nmi_radians_radiansexcel - dist_nmi_r, 
+    dist_nmi_diff_tot_radiansexcel_radians = dist_nmi_radians_radiansexcel - dist_nmi_radians, 
+    obs_radiansexcel = read_radiansexcel(
+      path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
+      skip = 5) %>% 
       janitor::clean_names() %>% 
       dplyr::select(lat) %>% 
       dplyr::filter(!is.na(lat)) %>% 
@@ -853,5 +906,5 @@ summary(compare_roms_outputs_dat)
 
 t(compare_roms_outputs_dat_sums)
 
-  
+
 
