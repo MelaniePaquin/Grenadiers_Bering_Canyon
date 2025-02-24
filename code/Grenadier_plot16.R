@@ -50,8 +50,8 @@ crs_in <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 
 # Wrangle data -----------------------------------------------------------------
 
-# larval_dat<-read_radiansexcel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
-larval_dat <- read_radiansexcel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
+# larval_dat<-read_excel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
+larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
                                 sheet = "GrenadierLarvlxy_time_step_targ") %>%
   dplyr::filter(!is.na(Canyon)) %>%
   dplyr::filter(!is.na(Corrected_Length)) %>%
@@ -879,21 +879,27 @@ write.csv(x = compare_roms_outputs_dat, file = here::here("output/compare_roms_o
 compare_roms_outputs_dat_sums <- compare_roms_outputs_dat %>% 
   dplyr::group_by(depth_m, year) %>%
   dplyr::summarise(
-    dist_km_r = sum(dist_km_r, na.rm = TRUE), 
+    #km
+    dist_km_projected = sum(dist_km_projected, na.rm = TRUE), 
     dist_km_radiansexcel = sum(dist_km_radiansexcel, na.rm = TRUE), 
     dist_km_radians = sum(dist_km_radians, na.rm = TRUE), 
-    dist_nmi_r = sum(dist_nmi_r, na.rm = TRUE), 
-    dist_nmi_radians_radiansexcel = sum(dist_nmi_radians_radiansexcel, na.rm = TRUE), 
+    dist_km_diff_radians_radiansexcel = sum(dist_km_diff_radians_radiansexcel, na.rm = TRUE), 
+    dist_km_diff_projected_radians = sum(dist_km_diff_projected_radians, na.rm = TRUE), 
+    dist_km_diff_projected_radiansexcel = sum(dist_km_diff_projected_radiansexcel, na.rm = TRUE), 
+    # nmi
+    dist_nmi_projected = sum(dist_nmi_projected, na.rm = TRUE), 
+    dist_nmi_radiansexcel = sum(dist_nmi_radiansexcel, na.rm = TRUE), 
     dist_nmi_radians = sum(dist_nmi_radians, na.rm = TRUE), 
-    dist_km_diff = sum(dist_km_diff, na.rm = TRUE), 
-    dist_nmi_diff = sum(dist_nmi_diff, na.rm = TRUE)) %>% 
+    dist_nmi_diff_radians_radiansexcel = sum(dist_nmi_diff_radians_radiansexcel, na.rm = TRUE), 
+    dist_nmi_diff_projected_radians = sum(dist_nmi_diff_projected_radians, na.rm = TRUE), 
+    dist_nmi_diff_projected_radiansexcel = sum(dist_nmi_diff_projected_radiansexcel, na.rm = TRUE)) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(
-    dist_km_diff_tot_radiansexcel_r = dist_km_radiansexcel - dist_km_r,
-    dist_km_diff_tot_radiansexcel_radians = dist_km_radiansexcel - dist_km_radians,
-    dist_nmi_diff_tot_radiansexcel_r = dist_nmi_radians_radiansexcel - dist_nmi_r, 
-    dist_nmi_diff_tot_radiansexcel_radians = dist_nmi_radians_radiansexcel - dist_nmi_radians, 
-    obs_radiansexcel = read_radiansexcel(
+  #   dist_km_diff_tot_radiansexcel_r = dist_km_radiansexcel - dist_km_r,
+  #   dist_km_diff_tot_radiansexcel_radians = dist_km_radiansexcel - dist_km_radians,
+  #   dist_nmi_diff_tot_radiansexcel_r = dist_nmi_radians_radiansexcel - dist_nmi_r, 
+  #   dist_nmi_diff_tot_radiansexcel_radians = dist_nmi_radians_radiansexcel - dist_nmi_radians, 
+    obs_radiansexcel = read_excel(
       path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
       skip = 5) %>% 
       janitor::clean_names() %>% 
