@@ -601,6 +601,11 @@ for (i in 1:length(a)) {
       dist_km_projected = NA, 
       dist_nmi_radians = NA)
   
+  if (1993 %in% as.numeric(temp$year)[1]) { 
+    temp <- temp %>% 
+      dplyr::filter(gmt > 34015.75)
+  }
+  
   # add projected data points
   temp <- temp %>%
     dplyr::bind_cols(temp %>%
@@ -643,9 +648,9 @@ roms_dat <- roms_dat %>%
     dist_km = dist_km_radians, 
     dist_nmi = dist_nmi_radians,
     # velocity_kmhr = dist_km/6, # distance (km) over time (6 hours)
-    velocity_cms = (dist_km_radians*100000)/(60*60*6) # distance (cm) over time (in seconds, 6 hours between)
- ) %>% 
-  dplyr::filter(gmt > 34015.75)
+    currentspeed_cms = (dist_km*100000)/(60*60*6) # distance (cm) over time (in seconds, 6 hours between)
+ ) 
+
 
 ### Create lines from points --------------------------------------------------
 
@@ -656,11 +661,13 @@ roms_dat_lines <- roms_dat %>%
     dist_km_sum = sum(dist_km, na.rm = TRUE), 
     dist_nmi_sum = sum(dist_nmi, na.rm = TRUE), 
     obs = n(), 
-    vel_mean = mean(velocity_cms, na.rm = TRUE), 
-    vel_min = min(velocity_cms, na.rm = TRUE), 
-    vel_max = max(velocity_cms, na.rm = TRUE)) %>% 
+    currentspeed_mean_by_averagecms = mean(currentspeed_cms, na.rm = TRUE), 
+    currentspeed_min = min(currentspeed_cms, na.rm = TRUE), 
+    currentspeed_max = max(currentspeed_cms, na.rm = TRUE)) %>% 
   sf::st_cast("LINESTRING") %>% 
-  dplyr::ungroup()
+  dplyr::ungroup() %>% 
+  dplyr::mutate(currentspeed_mean_bytotaldisttime = (dist_km_sum*100000)/(24*(obs/4)*60*60), 
+                currentspeed_mean = currentspeed_mean_bytotaldisttime)
 
 ## map plot -------------------------------------------------------------------
 
@@ -762,16 +769,16 @@ ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.tiff"),
 t21 <- roms_dat_lines %>% 
   dplyr::mutate(depth_m = as.numeric(paste0(depth_m))) %>%
   sf::st_drop_geometry() %>% 
-  dplyr::select(-obs, -year) %>% 
+  dplyr::select(-obs, -year) %>% # , -currentspeed_mean_bytotaldisttime, -currentspeed_mean_by_averagecms) %>% 
   flextable::flextable()  %>% 
   flextable::set_header_labels(
     date = "Date range",
     depth_m = "Current Depth (m)",
     dist_km_sum ="Distance traveled (km)",
     dist_nmi_sum ="Distance traveled (nmi)",
-    vel_mean = "Mean current speed (cm/s)",
-    vel_min = "Low current speed (cm/s)",
-    vel_max = "High current speed (cm/s)"
+    currentspeed_mean = "Mean current speed (cm/s)",
+    currentspeed_min = "Low current speed (cm/s)",
+    currentspeed_max = "High current speed (cm/s)"
   ) %>%
   flextable::merge_v(j = "date") %>%
   flextable::colformat_double(
