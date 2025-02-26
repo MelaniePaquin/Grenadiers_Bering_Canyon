@@ -585,11 +585,15 @@ for (i in 1:length(a)) {
   
   # crop data in roms model by gmt
   if (1993 %in% temp$year) { 
-    temp <- temp %>% 
-      dplyr::filter(gmt >= 34015) # Feb 17
-    if (temp$depth_m[1] %in% c(400,500)) {
+    if (temp$depth_m[1] %in% c(375)) { # 375m
+      temp <- temp %>%
+        dplyr::filter(gmt >= 34035) #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run)
+    } else if (temp$depth_m[1] %in% c(400, 500)) {  # 400, 500m
       temp <- temp %>%
         dplyr::filter(gmt >= 34063 & gmt <= 34080.75) #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75)
+    } else { # 100, 200, 300m
+      temp <- temp %>% 
+        dplyr::filter(gmt >= 34015) # Feb 17 (GMT =  34015) - April 29 (GMT = 34086; last day of roms run)     
     }
   }
   
