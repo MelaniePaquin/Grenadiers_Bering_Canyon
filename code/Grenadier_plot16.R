@@ -562,6 +562,7 @@ for (i in 1:length(a)) {
     data.frame() %>%
     dplyr::mutate(dplyr::across(all_of(cols), as.numeric)) 
   
+  
   # reformat data for next part of analysis Use the start columns and the last row of the end columns to create data format
   temp <- 
     rbind.data.frame(
@@ -574,13 +575,36 @@ for (i in 1:length(a)) {
     dplyr::mutate(
       filename = a[i], 
       year = substr(start = 12, stop = 15, x= filename), 
-      depth_m = substr(start = 7, stop = 9, x= filename)) %>% 
+      depth_m = as.numeric(substr(start = 7, stop = 9, x= filename))) %>% 
     # add date details for data plotting
     dplyr::arrange(gmt) %>%
     dplyr::mutate(
       date = as.Date(gmt, origin = "1900-01-01 00:00"), 
       time = 24*(gmt%%1), 
-      year = format(date, format = "%Y"), 
+      year = format(date, format = "%Y"))
+  
+  # crop data in roms model by gmt
+  if (1993 %in% temp$year) { 
+    temp <- temp %>% 
+      dplyr::filter(gmt >= 34015) # Feb 17
+    if (temp$depth_m[1] %in% c(400,500)) {
+      temp <- temp %>%
+        dplyr::filter(gmt >= 34063 & gmt <= 34080.75) #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75)
+    }
+  }
+  
+  # if (2008 %in% temp$year) { 
+  #   temp <- temp %>% 
+  #     dplyr::filter(gmt >= 00000) # Feb 17
+  #   if (temp$depth_m[1] %in% c(400,500)) {
+  #     temp <- temp %>%
+  #       dplyr::filter(gmt >= 00000 & gmt <= 00001) #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75)
+  #   }
+  # }
+  
+# add human-readable data attributes
+  temp <- temp %>% 
+    dplyr::mutate(
       date_md = format(date, format = "%B %d"), 
       date_mdy = format(date, format = "%B %d, %Y"), 
       date = paste0(format(min(date), format = "%B %d"), " - ", # " -\n", 
@@ -601,10 +625,6 @@ for (i in 1:length(a)) {
       dist_km_projected = NA, 
       dist_nmi_radians = NA)
   
-  if (1993 %in% as.numeric(temp$year)[1]) { 
-    temp <- temp %>% 
-      dplyr::filter(gmt > 34015.75)
-  }
   
   # add projected data points
   temp <- temp %>%
