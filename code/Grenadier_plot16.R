@@ -574,14 +574,14 @@ for (i in 1:length(a)) {
         dplyr::mutate(gmt = gmt - .25)) %>% # add 6 hours%>% 
     dplyr::mutate(
       filename = a[i], 
-      year = substr(start = 12, stop = 15, x= filename), 
+      # year = substr(start = 12, stop = 15, x= filename), 
       depth_m = as.numeric(substr(start = 7, stop = 9, x= filename))) %>% 
     # add date details for data plotting
     dplyr::arrange(gmt) %>%
     dplyr::mutate(
-      date = as.Date(gmt, origin = "1900-01-01 00:00"), 
+      date0 = as.Date(gmt, origin = "1900-01-01 00:00"), 
       time = 24*(gmt%%1), 
-      year = format(date, format = "%Y"))
+      year = format(date0, format = "%Y"))
   
   # crop data in roms model by gmt
   if (a[i] %in% c("drftB_400m_1993_0423_6hr.pos", "drftB_500m_1993_0423_6hr.pos")) { 
@@ -601,11 +601,16 @@ for (i in 1:length(a)) {
 # add human-readable data attributes
   temp <- temp %>% 
     dplyr::mutate(
-      date_md = format(date, format = "%B %d"), 
-      date_mdy = format(date, format = "%B %d, %Y"), 
-      date = paste0(format(min(date), format = "%B %d"), " - ", # " -\n", 
-                    format(max(date), format = "%B %d, %Y")),
-      event = c("Start", rep_len(length.out = (nrow(.)-2), NA), "End"), 
+      date_md = format(date0, format = "%B %d"), 
+      date_mdy = format(date0, format = "%B %d, %Y"), 
+      date = paste0(format(min(date0), format = "%B %d"), " - ", # " -\n", 
+                    format(max(date0), format = "%B %d, %Y")),
+      # event = c("Start", 
+      #           rep_len(length.out = floor((nrow(.)-2)*0.6), NA), # 60%
+      #           "End Fast Growth", 
+      #           rep_len(length.out = floor((nrow(.)-3)*0.4), NA), # 40%
+      #           "End Slow Growth"), 
+      event = c("Start", rep_len(length.out = (nrow(.)-2), NA), "End"),
       event = factor(event, ordered = TRUE)) %>% 
     # add geospatial to data
     sf::st_as_sf(coords = c("lon", "lat"), 
@@ -671,7 +676,7 @@ roms_dat <- roms_dat %>%
 ### Create lines from points --------------------------------------------------
 
 roms_dat_lines <- roms_dat %>%
-  dplyr::group_by(date, year, depth_m) %>%
+  dplyr::group_by(date, year, depth_m, filename) %>%
   dplyr::summarise(
     do_union = FALSE,
     dist_km_sum = sum(dist_km, na.rm = TRUE), 
@@ -683,7 +688,8 @@ roms_dat_lines <- roms_dat %>%
   sf::st_cast("LINESTRING") %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(currentspeed_mean_bytotaldisttime = (dist_km_sum*100000)/(24*(obs/4)*60*60), 
-                currentspeed_mean = currentspeed_mean_bytotaldisttime)
+                currentspeed_mean = currentspeed_mean_bytotaldisttime) %>% 
+  dplyr::arrange(filename)
 
 ## map plot -------------------------------------------------------------------
 
@@ -697,28 +703,28 @@ ggplot2::geom_sf(data = world_coordinates,
   ggplot2::scale_x_continuous(name = "Longitude °W",
                               breaks = seq(-180, -150, 5)) +
   ggplot2::scale_y_continuous(name = "Latitude °N",
-                              breaks = seq(50, 65, 5)) + # seq(52, 62, 2)
+                              breaks = seq(40, 65, 2)) + # seq(52, 62, 2)
   
-  ggplot2::geom_sf_text(
-    data = place_labels %>% dplyr::filter(type == "mainland"),
-    mapping = aes(label = lab, angle = angle), 
-    color = "grey60", 
-    size = 3, 
-    show.legend = FALSE) + 
-  ggplot2::geom_sf_text(
-    data = place_labels %>% dplyr::filter(type == "survey"),
-    mapping = aes(label = lab, angle = angle), 
-    color = "black",
-    fontface = "bold",
-    size = 2, 
-    show.legend = FALSE) + 
-  ggplot2::geom_sf_text(
-    data = place_labels %>% dplyr::filter(!(type %in% c("mainland", "survey"))),
-    mapping = aes(label = lab, angle = angle), 
-    color = "grey10", 
-    fontface = "italic", 
-    size = 2, 
-    show.legend = FALSE) +
+  # ggplot2::geom_sf_text(
+  #   data = place_labels %>% dplyr::filter(type == "mainland"),
+  #   mapping = aes(label = lab, angle = angle), 
+  #   color = "grey60", 
+  #   size = 3, 
+  #   show.legend = FALSE) + 
+  # ggplot2::geom_sf_text(
+  #   data = place_labels %>% dplyr::filter(type == "survey"),
+  #   mapping = aes(label = lab, angle = angle), 
+  #   color = "black",
+  #   fontface = "bold",
+  #   size = 2, 
+  #   show.legend = FALSE) + 
+  # ggplot2::geom_sf_text(
+  #   data = place_labels %>% dplyr::filter(!(type %in% c("mainland", "survey"))),
+  #   mapping = aes(label = lab, angle = angle), 
+  #   color = "grey10", 
+  #   fontface = "italic", 
+  #   size = 2, 
+  #   show.legend = FALSE) +
   
   ### Plot data ----------------------------------------------------------------
 
@@ -738,7 +744,7 @@ ggplot2::geom_sf(
       geometry = geometry), 
     # alpha = 0.7,
     size = 3) + 
-  ggplot2::facet_wrap(~date) +
+  ggplot2::facet_wrap(~date) + # filename
   ggplot2::scale_color_viridis_d(name = "Depth (m)", option = "D", begin = .2, end = .8) + 
   ggplot2::ggtitle(label = "Larval Grenadier Modeled ROMS Dispersal", 
                    subtitle = "At different depths, years, and environmental conditions") + 
@@ -753,7 +759,7 @@ ggplot2::coord_sf(xlim = c(max(roms_dat$X), min(roms_dat$X)),
   ggplot2::theme_bw() +
   ggplot2::theme(
     plot.margin=unit(c(0,0,0,0), "cm"), 
-    strip.background = element_rect(fill = "transparent", colour = "white"), 
+    strip.background = element_rect(fill = "transparent", colour = "black"), 
     strip.text = element_text(face = "bold"), # , family = font0
     panel.border = element_rect(colour = "grey20", linewidth = .25, fill = NA),
     panel.background = element_rect(fill = "white"), 
