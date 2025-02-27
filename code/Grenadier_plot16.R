@@ -584,27 +584,19 @@ for (i in 1:length(a)) {
       year = format(date, format = "%Y"))
   
   # crop data in roms model by gmt
-  if (1993 %in% temp$year) { 
-    if (temp$depth_m[1] %in% c(375)) { # 375m
+  if (a[i] %in% c("drftB_400m_1993_0423_6hr.pos", "drftB_500m_1993_0423_6hr.pos")) { 
+      temp <- temp %>%
+        dplyr::filter(gmt >= 34063) #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75; last day of roms run) #  & gmt <= 34080.75   
+  } else if (a[i] %in% c("drftB_100m_1993_0429_6hr.pos", "drftB_200m_1993_0429_6hr.pos", "drftB_300m_1993_0429_6hr.pos")) {
+    temp <- temp %>% 
+      dplyr::filter(gmt >= 34015) # Feb 17 (GMT =  34015) - April 29 (GMT = 34086; last day of roms run)  
+  } else if (a[i] %in% c("drftB_375m_1993_0429_6hr.pos")) {
       temp <- temp %>%
         dplyr::filter(gmt >= 34035) #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run)
-    } else if (temp$depth_m[1] %in% c(400, 500)) {  # 400, 500m
-      temp <- temp %>%
-        dplyr::filter(gmt >= 34063 & gmt <= 34080.75) #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75)
-    } else { # 100, 200, 300m
-      temp <- temp %>% 
-        dplyr::filter(gmt >= 34015) # Feb 17 (GMT =  34015) - April 29 (GMT = 34086; last day of roms run)     
-    }
+  # } else if (a[i] %in% c("drftB_375m_1993_0429_6hr.pos")) {
+  #   temp <- temp %>%
+  #     dplyr::filter(gmt >= 34035) #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run)
   }
-  
-  # if (2008 %in% temp$year) { 
-  #   temp <- temp %>% 
-  #     dplyr::filter(gmt >= 00000) # Feb 17
-  #   if (temp$depth_m[1] %in% c(400,500)) {
-  #     temp <- temp %>%
-  #       dplyr::filter(gmt >= 00000 & gmt <= 00001) #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75)
-  #   }
-  # }
   
 # add human-readable data attributes
   temp <- temp %>% 
@@ -748,7 +740,7 @@ ggplot2::geom_sf(
     size = 3) + 
   ggplot2::facet_wrap(~date) +
   ggplot2::scale_color_viridis_d(name = "Depth (m)", option = "D", begin = .2, end = .8) + 
-  ggplot2::ggtitle(label = "Juvenile Grenider Modeled ROMS Dispersal", 
+  ggplot2::ggtitle(label = "Larval Grenadier Modeled ROMS Dispersal", 
                    subtitle = "At different depths, years, and environmental conditions") + 
   ggplot2::scale_shape_discrete(name = "Event", 
                                 na.value = NA,
@@ -793,7 +785,7 @@ ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.tiff"),
 t21 <- roms_dat_lines %>% 
   dplyr::mutate(depth_m = as.numeric(paste0(depth_m))) %>%
   sf::st_drop_geometry() %>% 
-  dplyr::select(-obs, -year) %>% # , -currentspeed_mean_bytotaldisttime, -currentspeed_mean_by_averagecms) %>% 
+  dplyr::select(-year) %>% # -obs,  , -currentspeed_mean_bytotaldisttime, -currentspeed_mean_by_averagecms) %>% 
   flextable::flextable()  %>% 
   flextable::set_header_labels(
     date = "Date range",
