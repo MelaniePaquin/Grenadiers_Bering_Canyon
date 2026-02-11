@@ -52,10 +52,10 @@ crs_in <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 
 # larval_dat<-read_excel("~/My Desktop/r-tidyverse/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
 larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xlsx",
-                                sheet = "GrenadierLarvlxy_time_step_targ") %>%
-  dplyr::filter(!is.na(Canyon)) %>%
-  dplyr::filter(!is.na(Corrected_Length)) %>%
-  dplyr::arrange((Corrected_Length)) %>%
+                         sheet = "GrenadierLarvlxy_time_step_targ") |>
+  dplyr::filter(!is.na(Canyon)) |>
+  dplyr::filter(!is.na(Corrected_Length)) |>
+  dplyr::arrange((Corrected_Length)) |>
   dplyr::mutate(
     
     # same difference between bin values
@@ -95,13 +95,13 @@ larval_dat <- read_excel("./data/GrenadierLarvlxy_time_step_target_yrsCanyons.xl
       # Canyon == "Bering Cyn W thalweg" ~ "Bering\nCyn", # "Bering\nCyn\nw/thalweg", 
       # Canyon %in% c("Bering Cyn W thalweg", "Bering Cyn") ~ "A",      
     ) # note that NA was not defined here. if something is not defined, it will be NA in the new column unless you species TRUE ~ "blah"
-  ) %>% 
+  ) |> 
   # for troubleshooting ease, I am going to cut this table down to the necessary columns
   dplyr::select(Year, Canyon, canyon_title, MAX_GEAR_DEPTH, MIN_GEAR_DEPTH, GearAbrv,
-                Corrected_Length, size_bin_label, Latitude, Longitude) %>% 
+                Corrected_Length, size_bin_label, Latitude, Longitude) |> 
   sf::st_as_sf(coords = c("Longitude", "Latitude"), 
                remove = FALSE,
-               crs = crs_in) %>%
+               crs = crs_in) |>
   sf::st_transform(crs = crs_out)
 
 write.csv(x = larval_dat,file = "./data/larval_dat_processed.csv")
@@ -127,8 +127,8 @@ color_palette <- c("0.1-8 mm" = "grey",
 # since we are plotting this a few ways, we'll prepare plotting into a function
 
 plot_p16 <- function(year0) {
-  p16 <- larval_dat %>%
-    dplyr::filter(Year %in% year0) %>% 
+  p16 <- larval_dat |>
+    dplyr::filter(Year %in% year0) |> 
     ggplot(mapping = aes(x = canyon_title, y = MAX_GEAR_DEPTH, color = size_bin_label))+
     #Add line at 200 m depth
     geom_hline(yintercept = 200, linewidth = 0.2, color="gray") +
@@ -192,11 +192,11 @@ aaa
 
 ## Get world map ---------------------------------------------------------------
 
-world_coordinates <- maps::map("world", plot = FALSE, fill = TRUE) %>% 
-  sf::st_as_sf() %>%
-  # sf::st_union() %>% 
-  sf::st_transform(crs = crs_out) %>% 
-  dplyr::filter(ID %in% c("USA", "Russia", "Canada")) %>% 
+world_coordinates <- maps::map("world", plot = FALSE, fill = TRUE) |> 
+  sf::st_as_sf() |>
+  # sf::st_union() |> 
+  sf::st_transform(crs = crs_out) |> 
+  dplyr::filter(ID %in% c("USA", "Russia", "Canada")) |> 
   dplyr::mutate(ID = ifelse(ID == "USA", "Alaska", ID))
 
 ## Get place labels for map ----------------------------------------------------
@@ -221,9 +221,9 @@ place_labels <- data.frame(
           -157.377210, 173.205231, -136.664024, 
           -177.049063, -159.029430, 
           -173, -154.794131, 
-          -176, -162, -165)) %>%
-  dplyr::filter(type != "peninsula") %>% 
-  dplyr::filter(type != "survey") %>% 
+          -176, -162, -165)) |>
+  dplyr::filter(type != "peninsula") |> 
+  dplyr::filter(type != "survey") |> 
   # dplyr::mutate(
   #   color = dplyr::case_when(
   #     type == "mainland" ~ "grey80", 
@@ -233,19 +233,19 @@ place_labels <- data.frame(
   #     TRUE ~ "regular"),
   #   size = dplyr::case_when(
   #     type == "mainland" ~ 3, 
-  #     TRUE ~ 2) ) %>% 
+  #     TRUE ~ 2) ) |> 
   sf::st_as_sf(coords = c("lon", "lat"),
-               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
+               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") |>
   sf::st_transform(crs = crs_out) 
 
 ## Determine map boundaries ----------------------------------------------------
 
 boundaries <- data.frame(lon = c(-180, -160), # c(-180, -140)
-                         lat = c(50, 64) )  %>% # c(46, 66)
+                         lat = c(50, 64) )  |> # c(46, 66)
   sf::st_as_sf(coords = c("lon", "lat"),
-               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
-  sf::st_transform(crs = crs_out) %>% 
-  sf::st_coordinates() %>% 
+               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") |>
+  sf::st_transform(crs = crs_out) |> 
+  sf::st_coordinates() |> 
   data.frame()
 
 ## Groundfish Bottom Trawl Survey catch and haul data (FOSS) -------------------
@@ -270,7 +270,7 @@ for (i in seq(0, 500000, 10000)){
   
   ## bind sub-pull to dat data.frame
   dat <- dplyr::bind_rows(dat, 
-                          data$items %>%
+                          data$items |>
                             dplyr::select(-links)) # necessary for API accounting, but not part of the dataset)
 }
 dat_haul <- dat
@@ -300,7 +300,7 @@ for (i in grenadier_codes) {
   if (length(data$items) != 0) {
     dat <- dplyr::bind_rows(
       dat,
-      data$items %>% 
+      data$items |> 
         dplyr::select(-links)) # necessary for API accounting, but not part of the dataset
   }
 }
@@ -308,28 +308,28 @@ dat_catch <- dat
 
 ### Join groundfish haul and catch data ----------------------------------------
 
-gfdat <- dat_catch %>%
-  dplyr::left_join(dat_haul) %>% 
-  dplyr::group_by(srvy, species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) %>% 
+gfdat <- dat_catch |>
+  dplyr::left_join(dat_haul) |> 
+  dplyr::group_by(srvy, species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) |> 
   dplyr::summarise(cpue_nokm2 = sum(cpue_nokm2, na.rm = TRUE), 
                    cpue_kgkm2 = sum(cpue_kgkm2, na.rm = TRUE),
                    count = sum(count, na.rm = TRUE),
                    weight_kg = sum(weight_kg, na.rm = TRUE))
 write.csv(x = gfdat,file = "./data/gfdat_processed.csv")
 
-gfdat<-gfdat %>%
+gfdat<-gfdat |>
   sf::st_as_sf(coords = c("longitude_dd_start", "latitude_dd_start"), 
                remove = FALSE,
-               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
-  sf::st_transform(crs = crs_out) %>% 
+               crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") |>
+  sf::st_transform(crs = crs_out) |> 
   dplyr::mutate(Year = year)
 
 ## Pick years in both larval and groundfish data for plotting ------------------
 
-surveyyrs <- dat_haul %>% 
-  dplyr::select(year, srvy) %>% 
-  unique() %>% 
-  dplyr::arrange(desc(year)) %>% 
+surveyyrs <- dat_haul |> 
+  dplyr::select(year, srvy) |> 
+  unique() |> 
+  dplyr::arrange(desc(year)) |> 
   dplyr::filter(year %in% unique(c(gfdat$Year, larval_dat$Year)))
 
 ## Inport Groundfish Bottom Trawl Survey shapefiles (akgfmaps) -----------------
@@ -343,26 +343,26 @@ shp_goa$survey.strata$Stratum <- shp_goa$survey.strata$STRATUM
 shp_bss <- akgfmaps::get_base_layers(select.region = "ebs.slope", set.crs = "auto")
 
 shp_all <- shp <- dplyr::bind_rows(list(
-  tidyr::crossing(shp_ebs$survey.area %>%
+  tidyr::crossing(shp_ebs$survey.area |>
                     sf::st_transform(crs = crs_out), 
-                  Year = surveyyrs$year[surveyyrs$srvy == "EBS"]) %>%
+                  Year = surveyyrs$year[surveyyrs$srvy == "EBS"]) |>
     dplyr::mutate(SURVEY = "EBS"),
-  tidyr::crossing( shp_nbs$survey.area  %>%
+  tidyr::crossing( shp_nbs$survey.area  |>
                      sf::st_transform(crs = crs_out), 
-                   Year = surveyyrs$year[surveyyrs$srvy == "NBS"]) %>%
+                   Year = surveyyrs$year[surveyyrs$srvy == "NBS"]) |>
     dplyr::mutate(SURVEY = "NBS"),
-  tidyr::crossing(shp_ai$survey.area %>%
+  tidyr::crossing(shp_ai$survey.area |>
                     sf::st_transform(crs = crs_out), 
-                  Year = surveyyrs$year[surveyyrs$srvy == "AI"]) %>%
+                  Year = surveyyrs$year[surveyyrs$srvy == "AI"]) |>
     dplyr::mutate(SURVEY = "AI"),
-  tidyr::crossing(shp_goa$survey.area %>%
+  tidyr::crossing(shp_goa$survey.area |>
                     sf::st_transform(crs = crs_out), 
-                  Year = surveyyrs$year[surveyyrs$srvy == "GOA"]) %>%
+                  Year = surveyyrs$year[surveyyrs$srvy == "GOA"]) |>
     dplyr::mutate(SURVEY = "GOA"),
-  tidyr::crossing(shp_bss$survey.area %>%
+  tidyr::crossing(shp_bss$survey.area |>
                     sf::st_transform(crs = crs_out), 
-                  Year = surveyyrs$year[surveyyrs$srvy == "BSS"]) %>%
-    dplyr::mutate(SURVEY = "BSS"))) %>%
+                  Year = surveyyrs$year[surveyyrs$srvy == "BSS"]) |>
+    dplyr::mutate(SURVEY = "BSS"))) |>
   dplyr::select(Survey = SURVEY, geometry, Year)
 
 ## Plot map --------------------------------------------------------------------
@@ -386,20 +386,20 @@ p17 <- ggplot2::ggplot() +
   ggplot2::facet_wrap(~Year) +
   
   ggplot2::geom_sf_text(
-    data = place_labels %>% dplyr::filter(type == "mainland"),
+    data = place_labels |> dplyr::filter(type == "mainland"),
     mapping = aes(label = lab, angle = angle), 
     color = "grey60", 
     size = 3, 
     show.legend = FALSE) + 
   ggplot2::geom_sf_text(
-    data = place_labels %>% dplyr::filter(type == "survey"),
+    data = place_labels |> dplyr::filter(type == "survey"),
     mapping = aes(label = lab, angle = angle), 
     color = "black",
     fontface = "bold",
     size = 2, 
     show.legend = FALSE) + 
   ggplot2::geom_sf_text(
-    data = place_labels %>% dplyr::filter(!(type %in% c("mainland", "survey"))),
+    data = place_labels |> dplyr::filter(!(type %in% c("mainland", "survey"))),
     mapping = aes(label = lab, angle = angle), 
     color = "grey10", 
     fontface = "italic", 
@@ -451,11 +451,14 @@ p17 <- ggplot2::ggplot() +
     legend.text.position = "right"# "bottom"
   )
 
-
+str00 <- "example variable"
+str0 <- paste0(str00, ": blah blah notes about figure and process. ")
 p17
 
 ## Plot and save data ----------------------------------------------------------
-
+filename_end <- paste0(min(larval_dat$Year), "_", max(larval_dat$Year)) # "1993-2009" # 
+# writeLines(text = str0, con = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.txt"))
+writeLines(text = str0, con = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST_",filename_end,".txt"))
 ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.png"),
        plot=p17, width=8, height=4)
 ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.tiff"),
@@ -465,7 +468,7 @@ ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_
 
 ## Max depth -------------------------------------------------------------------
 
-p18 <- ggplot2::ggplot(data = larval_dat,# %>%
+p18 <- ggplot2::ggplot(data = larval_dat,# |>
                        # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
                        # dplyr::filter(!is.na(canyon_title)),
                        mapping = aes(
@@ -484,7 +487,7 @@ p18
 
 ## Min depth -------------------------------------------------------------------
 
-p19 <- ggplot2::ggplot(data = larval_dat,# %>%
+p19 <- ggplot2::ggplot(data = larval_dat,# |>
                        # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
                        # dplyr::filter(!is.na(canyon_title)),
                        mapping = aes(
@@ -506,31 +509,32 @@ p19
 # Observation counts
 table(larval_dat$GearAbrv, larval_dat$Canyon, larval_dat$Year)
 # Look at data subset
-larval_dat %>%
-  dplyr::select(Year, GearAbrv, Canyon, MAX_GEAR_DEPTH, MIN_GEAR_DEPTH) %>%
+larval_dat |>
+  dplyr::select(Year, GearAbrv, Canyon, MAX_GEAR_DEPTH, MIN_GEAR_DEPTH) |>
   dplyr::filter(Year == 1993, GearAbrv == "MOC1")
 
 # Gear by year depths line range plots -----------------------------------------------
 
-p20 <- ggplot2::ggplot(data = larval_dat %>%
-                         # dplyr::filter(Year == 1993)  %>% # Remove line if want all gear type all years
-                         # dplyr::filter(GearAbrv != "60BON")  %>%
-                         dplyr::select(Latitude, canyon_title, GearAbrv, Year, MAX = MAX_GEAR_DEPTH, MIN = MIN_GEAR_DEPTH) %>%
-                         dplyr::mutate(MIN = dplyr::case_when(
-                           GearAbrv == "60BON" ~ MAX, 
-                           .default = MIN
-                         )) %>%
-                         dplyr::mutate(id = 1:nrow(.)), # %>% 
-                       # tidyr::pivot_longer(cols = c("MAX", "MIN"), 
-                       #                     names_to = "Location", 
-                       #                     values_to = "Depth"), 
-                       # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
-                       # dplyr::filter(!is.na(canyon_title)),
-                       mapping = aes(
-                         color = canyon_title,
-                         # fill = canyon_title, 
-                         y = Latitude # id
-                       ))  +
+p20 <- ggplot2::ggplot(
+  data = larval_dat |>
+    # dplyr::filter(Year == 1993)  |> # Remove line if want all gear type all years
+    # dplyr::filter(GearAbrv != "60BON")  |>
+    dplyr::select(Latitude, canyon_title, GearAbrv, Year, MAX = MAX_GEAR_DEPTH, MIN = MIN_GEAR_DEPTH) |>
+    dplyr::mutate(MIN = dplyr::case_when(
+      GearAbrv == "60BON" ~ MAX, 
+      .default = MIN
+    )) |>
+    dplyr::mutate(id = 1:n()), # |> 
+  # tidyr::pivot_longer(cols = c("MAX", "MIN"), 
+  #                     names_to = "Location", 
+  #                     values_to = "Depth"), 
+  # dplyr::mutate(canyon_title = ifelse(is.na(canyon_title), "Other\ncanyon", canyon_title)), 
+  # dplyr::filter(!is.na(canyon_title)),
+  mapping = aes(
+    color = canyon_title,
+    # fill = canyon_title, 
+    y = Latitude # id
+  ))  +
   ggplot2::geom_linerange(aes(xmin = MIN, xmax = MAX)) +
   ggplot2::geom_point(mapping = aes(x = MIN)) + 
   ggplot2::geom_point(mapping = aes(x = MAX)) + 
@@ -552,72 +556,82 @@ roms_dat <- c()
 
 for (i in 1:length(a)) {
   
-  temp <- read.csv(file = paste0("./data/", a[i]), header = FALSE) %>% 
-    data.frame() %>% 
+  temp <- read.csv(file = paste0("./data/", a[i]), header = FALSE) |> 
+    data.frame() |> 
     dplyr::mutate(
       V1 = gsub(x = V1, pattern = "    ", replacement = ",", fixed = TRUE), 
       V1 = gsub(x = V1, pattern = " ", replacement = "", fixed = TRUE), 
-      V1 = paste0(V1, ",")) %>% 
-    tidyr::separate(col = "V1", into = c("gmt", "lon_start", "lat_start", "lon_end", "lat_end"), sep = ",") %>% 
-    data.frame() %>%
+      V1 = paste0(V1, ",")) |> 
+    tidyr::separate(col = "V1", into = c("gmt", "lon_start", "lat_start", "lon_end", "lat_end"), sep = ",") |> 
+    data.frame() |>
     dplyr::mutate(dplyr::across(all_of(cols), as.numeric)) 
   
   
   # reformat data for next part of analysis Use the start columns and the last row of the end columns to create data format
   temp <- 
     rbind.data.frame(
-      temp %>% 
+      temp |> 
         dplyr::select(gmt, lon = lon_start, lat = lat_start), 
-      temp %>% 
-        dplyr::select(gmt, lon = lon_end, lat = lat_end) %>% 
-        dplyr::slice_tail(n = 1) %>% 
-        dplyr::mutate(gmt = gmt - .25)) %>% # add 6 hours%>% 
+      temp |> 
+        dplyr::select(gmt, lon = lon_end, lat = lat_end) |> 
+        dplyr::slice_tail(n = 1) |> 
+        dplyr::mutate(gmt = gmt - .25)) |> # add 6 hours|> 
     dplyr::mutate(
       filename = a[i], 
       # year = substr(start = 12, stop = 15, x= filename), 
-      depth_m = as.numeric(substr(start = 7, stop = 9, x= filename))) %>% 
+      depth_m = as.numeric(substr(start = 7, stop = 9, x= filename))) |> 
     # add date details for data plotting
-    dplyr::arrange(gmt) %>%
+    dplyr::arrange(gmt) |>
     dplyr::mutate(
       date0 = as.Date(gmt, origin = "1900-01-01 00:00"), 
       time = 24*(gmt%%1), 
       year = format(date0, format = "%Y"))
   
-  # crop data in roms model by gmt
-  if (a[i] %in% c("drftB_400m_1993_0423_6hr.pos", "drftB_500m_1993_0423_6hr.pos")) { 
-      temp <- temp %>%
-        dplyr::filter(gmt >= 34063) #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75; last day of roms run) #  & gmt <= 34080.75   
-  } else if (a[i] %in% c("drftB_100m_1993_0429_6hr.pos", "drftB_200m_1993_0429_6hr.pos", "drftB_300m_1993_0429_6hr.pos")) {
-    temp <- temp %>% 
-      dplyr::filter(gmt >= 34015) # Feb 17 (GMT =  34015) - April 29 (GMT = 34086; last day of roms run)  
-  } else if (a[i] %in% c("drftB_375m_1993_0429_6hr.pos")) {
-      temp <- temp %>%
-        dplyr::filter(gmt >= 34035) #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run)
-  # } else if (a[i] %in% c("drftB_375m_1993_0429_6hr.pos")) {
-  #   temp <- temp %>%
-  #     dplyr::filter(gmt >= 34035) #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run)
-  }
   
-# add human-readable data attributes
-  temp <- temp %>% 
+  file_cutoff_dates <- data.frame(matrix(data = c(
+    # # 2007
+    # # change file names and gmts
+    # "drftB_400m_1993_0423_6hr.pos", 34063, #  NOTES
+    # "drftB_500m_1993_0423_6hr.pos", 34063, 
+    # "drftB_100m_1993_0429_6hr.pos", 34015, # NOTES
+    # "drftB_200m_1993_0429_6hr.pos", 34015, 
+    # "drftB_300m_1993_0429_6hr.pos", 34015, 
+    # "drftB_375m_1993_0429_6hr.pos", 34035, # NOTES
+    
+    # 1993
+    "drftB_400m_1993_0423_6hr.pos", 34063, #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75; last day of roms run) #  & gmt <= 34080.75
+    "drftB_500m_1993_0423_6hr.pos", 34063, 
+    "drftB_100m_1993_0429_6hr.pos", 34015, # Feb 17 (GMT =  34015) - April 29 (GMT = 34086; last day of roms run) 
+    "drftB_200m_1993_0429_6hr.pos", 34015, 
+    "drftB_300m_1993_0429_6hr.pos", 34015, 
+    "drftB_375m_1993_0429_6hr.pos", 34035  #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run)
+  ), ncol = 2, byrow = TRUE)) |> 
+    dplyr::rename(file = X1, gmt = X2) |> 
+    dplyr::mutate(gmt = as.numeric(gmt))
+  
+  temp <- temp |>
+    dplyr::filter(gmt >= file_cutoff_dates$gmt[file_cutoff_dates$file == a[i]])
+  
+  # add human-readable data attributes
+  temp <- temp |> 
     dplyr::mutate(
       date_md = format(date0, format = "%B %d"), 
       date_mdy = format(date0, format = "%B %d, %Y"), 
       date = paste0(format(min(date0), format = "%B %d"), " - ", # " -\n", 
                     format(max(date0), format = "%B %d, %Y")),
       # event = c("Start", 
-      #           rep_len(length.out = floor((nrow(.)-2)*0.6), NA), # 60%
+      #           rep_len(length.out = floor((n()-2)*0.6), NA), # 60%
       #           "End Fast Growth", 
-      #           rep_len(length.out = floor((nrow(.)-3)*0.4), NA), # 40%
+      #           rep_len(length.out = floor((n()-3)*0.4), NA), # 40%
       #           "End Slow Growth"), 
-      event = c("Start", rep_len(length.out = (nrow(.)-2), NA), "End"),
-      event = factor(event, ordered = TRUE)) %>% 
+      event = c("Start", rep_len(length.out = (n()-2), NA), "End"),
+      event = factor(event, ordered = TRUE)) |> 
     # add geospatial to data
     sf::st_as_sf(coords = c("lon", "lat"), 
                  agr = "constant", 
                  remove = FALSE, 
-                 crs = crs_in) %>%
-    sf::st_transform(crs = crs_out) %>% 
+                 crs = crs_in) |>
+    sf::st_transform(crs = crs_out) |> 
     dplyr::mutate( 
       lat_rad = lat*pi/180, 
       lon_rad = lon*pi/180, 
@@ -628,19 +642,19 @@ for (i in 1:length(a)) {
   
   
   # add projected data points
-  temp <- temp %>%
-    dplyr::bind_cols(temp %>%
+  temp <- temp |>
+    dplyr::bind_cols(temp |>
                        sf::st_coordinates())
-
+  
   
   # calculate distance between each point and its consecutive point
   for (ii in 2:(nrow(temp))){
     # CALCULATE DISTANCE WITH SF PROJECTION ESPG:3338
-    temp1 <- temp[(ii-1):(ii),] %>%
+    temp1 <- temp[(ii-1):(ii),] |>
       sf::st_distance()
     units(temp1)$numerator <- "km" # convert matrix unit from meters (m) to kilometers (km)
     temp$dist_km_projected[ii] <- temp1[2,1] # pull distance from in the matrix and add to vector
-
+    
     ## CALCULATE DISTANCE IN RADIAN
     temp$lat_rad_diff[ii] <- (temp$lat_rad[ii] - temp$lat_rad[ii+1])
     temp$lon_rad_diff[ii] <- (temp$lon_rad[ii] - temp$lon_rad[ii+1])
@@ -650,19 +664,19 @@ for (i in 1:length(a)) {
                 cos(temp$lon_rad_diff[ii])))/(pi/180)*60 
   }
   
-  temp <- temp %>% 
+  temp <- temp |> 
     dplyr::mutate(
       dist_km_radians = dist_nmi_radians*1.852, 
       dist_nmi_projected = dist_km_projected/1.852
     ) 
   
-  roms_dat <- roms_dat %>%
+  roms_dat <- roms_dat |>
     dplyr::bind_rows(temp)
 }
 
-roms_dat <- roms_dat %>% 
-  dplyr::ungroup() %>%
-  dplyr::arrange(depth_m)  %>% 
+roms_dat <- roms_dat |> 
+  dplyr::ungroup() |>
+  dplyr::arrange(depth_m)  |> 
   dplyr::mutate(
     year = factor(year, ordered = TRUE), 
     depth_m = factor(depth_m, ordered = TRUE), 
@@ -670,13 +684,12 @@ roms_dat <- roms_dat %>%
     dist_nmi = dist_nmi_radians,
     # velocity_kmhr = dist_km/6, # distance (km) over time (6 hours)
     currentspeed_cms = (dist_km*100000)/(60*60*6) # distance (cm) over time (in seconds, 6 hours between)
- ) 
-
+  ) 
 
 ### Create lines from points --------------------------------------------------
 
-roms_dat_lines <- roms_dat %>%
-  dplyr::group_by(date, year, depth_m, filename) %>%
+roms_dat_lines <- roms_dat |>
+  dplyr::group_by(date, year, depth_m, filename) |>
   dplyr::summarise(
     do_union = FALSE,
     dist_km_sum = sum(dist_km, na.rm = TRUE), 
@@ -684,11 +697,11 @@ roms_dat_lines <- roms_dat %>%
     obs = n(), 
     currentspeed_mean_by_averagecms = mean(currentspeed_cms, na.rm = TRUE), 
     currentspeed_min = min(currentspeed_cms, na.rm = TRUE), 
-    currentspeed_max = max(currentspeed_cms, na.rm = TRUE)) %>% 
-  sf::st_cast("LINESTRING") %>% 
-  dplyr::ungroup() %>% 
+    currentspeed_max = max(currentspeed_cms, na.rm = TRUE)) |> 
+  sf::st_cast("LINESTRING") |> 
+  dplyr::ungroup() |> 
   dplyr::mutate(currentspeed_mean_bytotaldisttime = (dist_km_sum*100000)/(24*(obs/4)*60*60), 
-                currentspeed_mean = currentspeed_mean_bytotaldisttime) %>% 
+                currentspeed_mean = currentspeed_mean_bytotaldisttime) |> 
   dplyr::arrange(filename)
 
 ## map plot -------------------------------------------------------------------
@@ -706,20 +719,20 @@ ggplot2::geom_sf(data = world_coordinates,
                               breaks = seq(40, 65, 2)) + # seq(52, 62, 2)
   
   # ggplot2::geom_sf_text(
-  #   data = place_labels %>% dplyr::filter(type == "mainland"),
+  #   data = place_labels |> dplyr::filter(type == "mainland"),
   #   mapping = aes(label = lab, angle = angle), 
   #   color = "grey60", 
   #   size = 3, 
   #   show.legend = FALSE) + 
   # ggplot2::geom_sf_text(
-  #   data = place_labels %>% dplyr::filter(type == "survey"),
+  #   data = place_labels |> dplyr::filter(type == "survey"),
   #   mapping = aes(label = lab, angle = angle), 
   #   color = "black",
   #   fontface = "bold",
   #   size = 2, 
   #   show.legend = FALSE) + 
   # ggplot2::geom_sf_text(
-  #   data = place_labels %>% dplyr::filter(!(type %in% c("mainland", "survey"))),
+  #   data = place_labels |> dplyr::filter(!(type %in% c("mainland", "survey"))),
   #   mapping = aes(label = lab, angle = angle), 
   #   color = "grey10", 
   #   fontface = "italic", 
@@ -788,11 +801,11 @@ ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.tiff"),
 
 ### summary table -------------------------------------------------------------
 
-t21 <- roms_dat_lines %>% 
-  dplyr::mutate(depth_m = as.numeric(paste0(depth_m))) %>%
-  sf::st_drop_geometry() %>% 
-  dplyr::select(-year) %>% # -obs,  , -currentspeed_mean_bytotaldisttime, -currentspeed_mean_by_averagecms) %>% 
-  flextable::flextable()  %>% 
+t21 <- roms_dat_lines |> 
+  dplyr::mutate(depth_m = as.numeric(paste0(depth_m))) |>
+  sf::st_drop_geometry() |> 
+  dplyr::select(-year) |> # -obs,  , -currentspeed_mean_bytotaldisttime, -currentspeed_mean_by_averagecms) |> 
+  flextable::flextable()  |> 
   flextable::set_header_labels(
     date = "Date range",
     depth_m = "Current Depth (m)",
@@ -801,29 +814,29 @@ t21 <- roms_dat_lines %>%
     currentspeed_mean = "Mean current speed (cm/s)",
     currentspeed_min = "Low current speed (cm/s)",
     currentspeed_max = "High current speed (cm/s)"
-  ) %>%
-  flextable::merge_v(j = "date") %>%
+  ) |>
+  flextable::merge_v(j = "date") |>
   flextable::colformat_double(
     big.mark = ",", 
     digits = 2, 
-    na_str = "-") %>% 
+    na_str = "-") |> 
   flextable::colformat_double(
     j = c("depth_m"), 
     big.mark = "", 
     digits = 0, 
-    na_str = "-") %>% 
-  flextable::theme_vanilla() %>%
-  flextable::width(width = 6.5/(7)) %>% 
-  flextable::theme_zebra() %>% 
-  flextable::width(width = .75)%>% 
+    na_str = "-") |> 
+  flextable::theme_vanilla() |>
+  flextable::width(width = 6.5/(7)) |> 
+  flextable::theme_zebra() |> 
+  flextable::width(width = .75)|> 
   flextable::width(width = 1.5, j = "date")
 
 t21
 
 ### compare -------------
 
-# temp <- roms_dat %>% 
-#   sf::st_drop_geometry() %>% 
+# temp <- roms_dat |> 
+#   sf::st_drop_geometry() |> 
 #   dplyr::mutate(
 #     depth_m = as.numeric(paste0(depth_m)),
 #     year = as.numeric(paste0(year)), 
@@ -841,46 +854,46 @@ t21
 #               cos(temp$lon_rad_diff_radians[i])))/(pi/180)*60 
 # }
 # 
-# temp <- temp %>% 
+# temp <- temp |> 
 #   dplyr::mutate(
 #     dist_km_radians = dist_nmi_radians*1.852
-#   ) %>% 
+#   ) |> 
 #   dplyr::select(gmt, lat, lon, year, depth_m, 
 #                 dist_nmi_r = dist_nmi, 
 #                 dist_km_r = dist_km, 
 #                 dist_nmi_radians, 
 #                 dist_km_radians)
 
-temp <- roms_dat %>% # compare all available data
-  sf::st_drop_geometry() %>% 
+temp <- roms_dat |> # compare all available data
+  sf::st_drop_geometry() |> 
   dplyr::filter(
     year == 1993 &
-      depth_m == 300) %>% 
+      depth_m == 300) |> 
   dplyr::mutate(
     # gmt = gmt + 0.25,
     year = as.numeric(paste0(year)), 
-    depth_m = as.numeric(paste0(depth_m))) %>% 
+    depth_m = as.numeric(paste0(depth_m))) |> 
   dplyr::select(gmt, lat, lon, year, depth_m, 
                 dist_nmi_projected, dist_km_projected, 
                 dist_nmi_radians, dist_km_radians)
 
 compare_roms_outputs_dat <- read_excel(
   path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
-  skip = 5) %>% 
-  janitor::clean_names() %>% 
-  dplyr::select(lat = dec_lat, lon = dec_long, dist_nmi_radiansexcel = distance_nm) %>% 
+  skip = 5) |> 
+  janitor::clean_names() |> 
+  dplyr::select(lat = dec_lat, lon = dec_long, dist_nmi_radiansexcel = distance_nm) |> 
   dplyr::mutate(lon = lon*-1, 
                 depth_m = 300, 
                 year = 1993, 
-                dist_km_radiansexcel = dist_nmi_radiansexcel*1.852) %>% 
-  dplyr::filter(!is.na(lat)) %>%
+                dist_km_radiansexcel = dist_nmi_radiansexcel*1.852) |> 
+  dplyr::filter(!is.na(lat)) |>
   # dplyr::full_join(
-  #   temp %>% 
+  #   temp |> 
   #     dplyr::select(gmt, lat, lon, year, depth_m)
-  # ) %>% 
+  # ) |> 
   # add roms data to this table for comparison
-  dplyr::full_join(temp) %>%
-  # dplyr::left_join(temp) %>% # compare only data in excel
+  dplyr::full_join(temp) |>
+  # dplyr::left_join(temp) |> # compare only data in excel
   dplyr::mutate(
     dist_km_diff_radians_radiansexcel = dist_km_radians - dist_km_radiansexcel, 
     dist_km_diff_projected_radians = dist_km_projected - dist_km_radians, 
@@ -888,7 +901,7 @@ compare_roms_outputs_dat <- read_excel(
     dist_nmi_diff_radians_radiansexcel = dist_nmi_radians - dist_nmi_radiansexcel, 
     dist_nmi_diff_projected_radians = dist_nmi_projected - dist_nmi_radians, 
     dist_nmi_diff_projected_radiansexcel = dist_nmi_projected - dist_nmi_radiansexcel
-  ) %>% 
+  ) |> 
   dplyr::relocate(gmt, year, lat, lon, depth_m, 
                   dist_km_projected, 
                   dist_km_radians, 
@@ -905,8 +918,8 @@ compare_roms_outputs_dat <- read_excel(
 
 write.csv(x = compare_roms_outputs_dat, file = here::here("output/compare_roms_outputs_dat.csv"))
 
-compare_roms_outputs_dat_sums <- compare_roms_outputs_dat %>% 
-  dplyr::group_by(depth_m, year) %>%
+compare_roms_outputs_dat_sums <- compare_roms_outputs_dat |> 
+  dplyr::group_by(depth_m, year) |>
   dplyr::summarise(
     #km
     dist_km_projected = sum(dist_km_projected, na.rm = TRUE), 
@@ -921,19 +934,19 @@ compare_roms_outputs_dat_sums <- compare_roms_outputs_dat %>%
     dist_nmi_radians = sum(dist_nmi_radians, na.rm = TRUE), 
     dist_nmi_diff_radians_radiansexcel = sum(dist_nmi_diff_radians_radiansexcel, na.rm = TRUE), 
     dist_nmi_diff_projected_radians = sum(dist_nmi_diff_projected_radians, na.rm = TRUE), 
-    dist_nmi_diff_projected_radiansexcel = sum(dist_nmi_diff_projected_radiansexcel, na.rm = TRUE)) %>% 
-  dplyr::ungroup() %>% 
+    dist_nmi_diff_projected_radiansexcel = sum(dist_nmi_diff_projected_radiansexcel, na.rm = TRUE)) |> 
+  dplyr::ungroup() |> 
   dplyr::mutate(
-  #   dist_km_diff_tot_radiansexcel_r = dist_km_radiansexcel - dist_km_r,
-  #   dist_km_diff_tot_radiansexcel_radians = dist_km_radiansexcel - dist_km_radians,
-  #   dist_nmi_diff_tot_radiansexcel_r = dist_nmi_radians_radiansexcel - dist_nmi_r, 
-  #   dist_nmi_diff_tot_radiansexcel_radians = dist_nmi_radians_radiansexcel - dist_nmi_radians, 
+    #   dist_km_diff_tot_radiansexcel_r = dist_km_radiansexcel - dist_km_r,
+    #   dist_km_diff_tot_radiansexcel_radians = dist_km_radiansexcel - dist_km_radians,
+    #   dist_nmi_diff_tot_radiansexcel_r = dist_nmi_radians_radiansexcel - dist_nmi_r, 
+    #   dist_nmi_diff_tot_radiansexcel_radians = dist_nmi_radians_radiansexcel - dist_nmi_radians, 
     obs_radiansexcel = read_excel(
       path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
-      skip = 5) %>% 
-      janitor::clean_names() %>% 
-      dplyr::select(lat) %>% 
-      dplyr::filter(!is.na(lat)) %>% 
+      skip = 5) |> 
+      janitor::clean_names() |> 
+      dplyr::select(lat) |> 
+      dplyr::filter(!is.na(lat)) |> 
       nrow(), 
     obs_r = nrow(temp))
 
