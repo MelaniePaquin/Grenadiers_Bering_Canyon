@@ -649,13 +649,13 @@ for (i in 1:length(a)) {
   
   # calculate distance between each point and its consecutive point
   for (ii in 2:(nrow(temp))){
-    # CALCULATE DISTANCE WITH SF PROJECTION ESPG:3338
+    # CALCULATE DISTANCE WITH SF PROJECTION ESPG:3338, METHOD 1
     temp1 <- temp[(ii-1):(ii),] |>
       sf::st_distance()
     units(temp1)$numerator <- "km" # convert matrix unit from meters (m) to kilometers (km)
     temp$dist_km_projected[ii] <- temp1[2,1] # pull distance from in the matrix and add to vector
     
-    ## CALCULATE DISTANCE IN RADIAN
+    ## CALCULATE DISTANCE IN RADIAN # METHOD 2
     temp$lat_rad_diff[ii] <- (temp$lat_rad[ii] - temp$lat_rad[ii+1])
     temp$lon_rad_diff[ii] <- (temp$lon_rad[ii] - temp$lon_rad[ii+1])
     temp$dist_nmi_radians[ii] <- # in excel: # ACOS((SIN(R9)*SIN(R10))+(COS(R9)*COS(R10)*COS(T10)))/(PI()/180)*60
@@ -680,8 +680,8 @@ roms_dat <- roms_dat |>
   dplyr::mutate(
     year = factor(year, ordered = TRUE), 
     depth_m = factor(depth_m, ordered = TRUE), 
-    dist_km = dist_km_radians, 
-    dist_nmi = dist_nmi_radians,
+    dist_km = dist_km_radians, # DECISION POINT - using radians
+    dist_nmi = dist_nmi_radians, # DECISION POINT
     # velocity_kmhr = dist_km/6, # distance (km) over time (6 hours)
     currentspeed_cms = (dist_km*100000)/(60*60*6) # distance (cm) over time (in seconds, 6 hours between)
   ) 
@@ -695,13 +695,17 @@ roms_dat_lines <- roms_dat |>
     dist_km_sum = sum(dist_km, na.rm = TRUE), 
     dist_nmi_sum = sum(dist_nmi, na.rm = TRUE), 
     obs = n(), 
+    # average of all speed observations (all values/count aka number of rows)
     currentspeed_mean_by_averagecms = mean(currentspeed_cms, na.rm = TRUE), 
+    currentspeed_mean_by_sdcms = sd(currentspeed_cms, na.rm = TRUE), 
     currentspeed_min = min(currentspeed_cms, na.rm = TRUE), 
     currentspeed_max = max(currentspeed_cms, na.rm = TRUE)) |> 
   sf::st_cast("LINESTRING") |> 
   dplyr::ungroup() |> 
-  dplyr::mutate(currentspeed_mean_bytotaldisttime = (dist_km_sum*100000)/(24*(obs/4)*60*60), 
-                currentspeed_mean = currentspeed_mean_bytotaldisttime) |> 
+  dplyr::mutate(
+    # total distance divided by total time - em thinks is less precise  
+    currentspeed_mean_bytotaldisttime = (dist_km_sum*100000)/(24*(obs/4)*60*60), 
+    currentspeed_mean = currentspeed_mean_by_averagecms) |> # DECISION POINT
   dplyr::arrange(filename)
 
 ## map plot -------------------------------------------------------------------
