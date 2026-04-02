@@ -23,6 +23,7 @@ PKG <- c(
   "plyr",
   "dplyr",
   "magrittr",
+  "janitor",
   "readxl",
   "stringr",
   "stringi",
@@ -32,7 +33,7 @@ PKG <- c(
   "flextable" # making pretty tables
 )
 
-PKG <- unique(PKG)
+ PKG <- unique(PKG)
 for (p in PKG) {
   if(!require(p,character.only = TRUE)) {
     if (p == "akgfmaps") {
@@ -129,9 +130,9 @@ color_palette <- c("0.1-8 mm" = "grey",
 plot_p16 <- function(year0) {
   p16 <- larval_dat |>
     dplyr::filter(Year %in% year0) |> 
-    ggplot(mapping = aes(x = canyon_title, y = MAX_GEAR_DEPTH, color = size_bin_label))+
+    ggplot2::ggplot(mapping = aes(x = canyon_title, y = MAX_GEAR_DEPTH, color = size_bin_label))+
     #Add line at 200 m depth
-    geom_hline(yintercept = 200, linewidth = 0.2, color="gray") +
+    ggplot2::geom_hline(yintercept = 200, linewidth = 0.2, color="gray") +
     # geom_jitter(mapping = aes(color = size_bin_label), # using geom_jitter instead of geom_point because points are being hidden
     #            alpha = .5, 
     #            width = .2,
@@ -143,14 +144,16 @@ plot_p16 <- function(year0) {
     # Plot 2008 with following conditions for jitter so plot looks correct
     #geom_point(position=position_jitter(h=.0, w=0.1),
     #mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
-    geom_point(position=position_jitter(h=0, w=0.2), # geom_jitter values for 2007 but run multiple X to get horizontal spread
+    ggplot2::geom_point(position=position_jitter(h=0, w=0.2), # geom_jitter values for 2007 but run multiple X to get horizontal spread
                mapping = aes(color = size_bin_label), alpha = 0.5, size = 3) +
     
     #reverse y-axis for depth
-    scale_y_reverse(limits = c(700, 0, by=25),
-                    expand = c(0.03, 0.03))+
-    facet_wrap(~Year, nrow = 5)+
-    labs(x = "Capture location",
+    ggplot2::scale_y_reverse(limits = c(700, 0), 
+                    breaks = seq(0, 700, 100),
+                       # minor_breaks = 25, 
+                       expand = c(0.03, 0.03)) + 
+    ggplot2::facet_wrap(~Year, nrow = 5)+
+    ggplot2::labs(x = "Capture location",
          y = "Maximum gear depth (m)",
          title = "Grenadier larvae captures in the southeast Bering Sea showing maximum gear depth") + 
     # manually define color for points
@@ -159,8 +162,8 @@ plot_p16 <- function(year0) {
       name = "",
       drop = TRUE) +
     #Add theme backgrnd white###
-    theme_bw() +
-    theme(
+    ggplot2::theme_bw() +
+    ggplot2::theme(
       # text = element_text(family = "monserrat"), # 
       axis.line = element_line(),
       panel.background = element_rect(fill = "#FFFFFF"),
@@ -172,9 +175,9 @@ plot_p16 <- function(year0) {
 ## Plot and save data for one year iteratively ---------------------------------
 for (i in c(1993, 2007, 2008, 2009)) {  
   aaa <- plot_p16(year0 = i) 
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16_2009.png"),
+  ggsave(filename = paste0("./output/",i,"_gren_larv_capt_cyn_plot16_2009.png"),
          plot=aaa, width=8, height=4)
-  ggsave(filename = paste0("./output/",i,"_Grenadier_larv_capture_in_Canyons_plot16_2009.tiff"),
+  ggsave(filename = paste0("./output/",i,"_gren_larv_capt_cyn_plot16_2009.tiff"),
          plot=aaa, width=8, height=4)
   aaa  #Added this code in order to see plot in Plot window
 }
@@ -182,9 +185,9 @@ for (i in c(1993, 2007, 2008, 2009)) {
 ## plot and save specific year(s) of data in one plot --------------------------
 yrs <- c(1993, 2007, 2008, 2009)
 aaa <- plot_p16(year0 = yrs)
-ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Test.png"),
+ggsave(filename = paste0("./output/", paste0(yrs, collapse = "_"),"_gren_larv_capt_cyn_plot16Test.png"),
        plot=aaa, width=8, height=4)
-ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_Grenadier_larv_capture_in_Canyons_plot16Test.tiff"),
+ggsave(filename = paste0("./output/",paste0(yrs, collapse = "_"),"_gren_larv_capt_cyn_plot16Test.tiff"),
        plot=aaa, width=8, height=4)
 aaa
 
@@ -452,16 +455,16 @@ p17 <- ggplot2::ggplot() +
   )
 
 str00 <- "example variable"
-str0 <- paste0(str00, ": blah blah notes about figure and process. ")
+str0 <- paste0(str00, ": notes about figure and process: Hatch date was calculated using capture date and slow growth rate see file GrenadierLarv_xy_time_stepDEC24MMP_Nedv3Calc_date_hatchESTIMATE.xml. At hatch day larva is one day old. Also explained in .pos file compilation drftB_depth_1993_07_08_09_6hr_data_slow_fast.xml. Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run) for depth 375 m see code drftB_375m_1993_0429_6hr.pos, 34035")
 p17
 
 ## Plot and save data ----------------------------------------------------------
 filename_end <- paste0(min(larval_dat$Year), "_", max(larval_dat$Year)) # "1993-2009" # 
-# writeLines(text = str0, con = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.txt"))
-writeLines(text = str0, con = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST_",filename_end,".txt"))
-ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.png"),
+# writeLines(text = str0, con = paste0("./output/gren_larv_capt_cyn_plotLabels_mapTEST.txt"))
+writeLines(text = str0, con = paste0("./output/gren_larv_capt_cyn_plotLabels_mapTEST_notes_",filename_end,".txt"))
+ggsave(filename = paste0("./output/gren_larv_capt_cyn_plotLabels_mapTEST.png"),
        plot=p17, width=8, height=4)
-ggsave(filename = paste0("./output/Grenadier_larv_capture_in_Canyons_plotLabels_mapTEST.tiff"),
+ggsave(filename = paste0("./output/gren_larv_capt_cyn_plotLabels_mapTEST.tiff"),
        plot=p17, width=8, height=4)
 
 # Gear by year depths histograms -----------------------------------------------
@@ -587,35 +590,84 @@ for (i in 1:length(a)) {
       time = 24*(gmt%%1), 
       year = format(date0, format = "%Y"))
   
-  
+  # This just deals with establishing a cut off date, if there is one
   file_cutoff_dates <- data.frame(matrix(data = c(
+    # 
     # # 2007
-    # # change file names and gmts
-    # "drftB_400m_1993_0423_6hr.pos", 34063, #  NOTES
-    # "drftB_500m_1993_0423_6hr.pos", 34063, 
-    # "drftB_100m_1993_0429_6hr.pos", 34015, # NOTES
-    # "drftB_200m_1993_0429_6hr.pos", 34015, 
-    # "drftB_300m_1993_0429_6hr.pos", 34015, 
-    # "drftB_375m_1993_0429_6hr.pos", 34035, # NOTES
-    
+    # "drftB_100m_2007_0510_6hr.pos", 0,
+    # "drftB_100m_2007_0515_6hr.pos", 0,
+    # "drftB_100m_2007_0517_6hr.pos", 0,
+    # "drftB_200m_2007_0510_6hr.pos", 0, 
+    # "drftB_200m_2007_0515_6hr.pos", 0,
+    # "drftB_200m_2007_0517_6hr.pos", 0,    
+    # "drftB_300m_2007_0510_6hr.pos", 0,
+    # "drftB_300m_2007_0515_6hr.pos", 0, 
+    # "drftB_300m_2007_0517_6hr.pos", 0,    
+    # "drftB_400m_2007_0517_6hr.pos", 0,
+    # "drftB_500m_2007_0517_6hr.pos", 0, 
+    # "drftB_600m_2007_0517_6hr.pos", 0, 
+    # 
+    # # 2008
+    # "drftB_100m_2008_0220_6hr.pos", 0, 
+    # "drftB_100m_2008_0224_6hr.pos", 0, 
+    # "drftB_200m_2008_0220_6hr.pos", 0, 
+    # "drftB_200m_2008_0224_6hr.pos", 0,     
+    # "drftB_300m_2008_0220_6hr.pos", 0, 
+    # "drftB_300m_2008_0224_6hr.pos", 0,
+    # "drftB_300m_2008_0226_6hr.pos", 0,     
+    # "drftB_400m_2008_0220_6hr.pos", 0, 
+    # "drftB_400m_2008_0224_6hr.pos", 0, 
+    # "drftB_400m_2008_0226_6hr.pos", 0,     
+    # "drftB_450m_2008_0226_6hr.pos", 0, 
+    # "drftB_500m_2008_0220_6hr.pos", 0,
+    # "drftB_500m_2008_0224_6hr.pos", 0,
+    # "drftB_600m_2008_0224_6hr.pos", 0, 
+    # 
+    # #2009
+    # "drftB_100m_2009_0227_6hr.pos", 0, 
+    # "drftB_100m_2009_0301_6hr.pos", 0,
+    # "drftB_100m_2009_0302_6hr.pos", 0, 
+    # "drftB_200m_2009_0227_6hr.pos", 0,
+    # "drftB_200m_2009_0301_6hr.pos", 0, 
+    # "drftB_200m_2009_0302_6hr.pos", 0,     
+    # "drftB_300m_2009_0227_6hr.pos", 0, 
+    # "drftB_300m_2009_0301_6hr.pos", 0, 
+    # "drftB_300m_2009_0302_6hr.pos", 0, 
+    # "drftB_400m_2009_0227_6hr.pos", 0,
+    # "drftB_400m_2009_0301_6hr.pos", 0, 
+    # "drftB_400m_2009_0302_6hr.pos", 0, 
+    # "drftB_450m_2009_0302_6hr.pos", 0,
+    # "drftB_500m_2009_0227_6hr.pos", 0, 
+    # "drftB_500m_2009_0301_6hr.pos", 0, 
+    # "drftB_600m_2009_0227_6hr.pos", 0,
+
     # 1993
-    "drftB_400m_1993_0423_6hr.pos", 34063, #  April 6 (GMT = 34063) - April 23 (GMT = 34080.75; last day of roms run) #  & gmt <= 34080.75
+    #"drftB_375m_1993_0429_6hr.pos", 34035  #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run). This must get used for the larval drift tracks not the calculation of current speed???
+    "drftB_400m_1993_0416_6hr.pos", 34060, #  Hatch date April 3 (GMT =  34060) - last day of roms run is the capture date April 16 (GMT = 34073) 
+    "drftB_500m_1993_0416_6hr.pos", 34060,
+    "drftB_525m_1993_0416_6hr.pos", 34060,
+    "drftB_400m_1993_0423_6hr.pos", 34063, #  Hatch date April 6 (GMT = 34063) - capture date April 23 (GMT = 34080 [incl. 34080.75]; last day of roms run) #  & gmt <= 34080
     "drftB_500m_1993_0423_6hr.pos", 34063, 
-    "drftB_100m_1993_0429_6hr.pos", 34015, # Feb 17 (GMT =  34015) - April 29 (GMT = 34086; last day of roms run) 
-    "drftB_200m_1993_0429_6hr.pos", 34015, 
-    "drftB_300m_1993_0429_6hr.pos", 34015, 
-    "drftB_375m_1993_0429_6hr.pos", 34035  #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run)
-  ), ncol = 2, byrow = TRUE)) |> 
+    "drftB_100m_1993_0429_6hr.pos", 34016, #  Hatch date Feb 18 (GMT =  34016) - last day of roms run is the capture date April 29 (GMT = 34086) 
+    "drftB_200m_1993_0429_6hr.pos", 34016, 
+    "drftB_300m_1993_0429_6hr.pos", 34016, 
+    "drftB_375m_1993_0429_6hr.pos", 34016  #  Not skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run). This must get used for the larval drift tracks not the calculation of current speed???
+
+    ), ncol = 2, byrow = TRUE)) |> 
     dplyr::rename(file = X1, gmt = X2) |> 
     dplyr::mutate(gmt = as.numeric(gmt))
   
+  # if we have a specified start date (GMT) in file_cutoff_dates (see above for 1993), TRUE and crop data accordingly
+  if (a[i] %in% file_cutoff_dates$file) { 
   temp <- temp |>
+    # include all date-times this gmt and later. the whole number represents midnight, which is when we want to start everything and includes everything within that whole number (GMT = 1234 through 1234.75, and later)
     dplyr::filter(gmt >= file_cutoff_dates$gmt[file_cutoff_dates$file == a[i]])
+  }
   
   # add human-readable data attributes
   temp <- temp |> 
     dplyr::mutate(
-      date_md = format(date0, format = "%B %d"), 
+      date_md = format(date0, format = "%B %d"), # For example Feb 17 1993 (GMT =  34015) 
       date_mdy = format(date0, format = "%B %d, %Y"), 
       date = paste0(format(min(date0), format = "%B %d"), " - ", # " -\n", 
                     format(max(date0), format = "%B %d, %Y")),
@@ -655,7 +707,7 @@ for (i in 1:length(a)) {
     units(temp1)$numerator <- "km" # convert matrix unit from meters (m) to kilometers (km)
     temp$dist_km_projected[ii] <- temp1[2,1] # pull distance from in the matrix and add to vector
     
-    ## CALCULATE DISTANCE IN RADIAN # METHOD 2
+    ## CALCULATE DISTANCE IN RADIAN # METHOD 2 - from excel from MACE
     temp$lat_rad_diff[ii] <- (temp$lat_rad[ii] - temp$lat_rad[ii+1])
     temp$lon_rad_diff[ii] <- (temp$lon_rad[ii] - temp$lon_rad[ii+1])
     temp$dist_nmi_radians[ii] <- # in excel: # ACOS((SIN(R9)*SIN(R10))+(COS(R9)*COS(R10)*COS(T10)))/(PI()/180)*60
@@ -681,7 +733,9 @@ roms_dat <- roms_dat |>
     year = factor(year, ordered = TRUE), 
     depth_m = factor(depth_m, ordered = TRUE), 
     dist_km = dist_km_radians, # DECISION POINT - using radians
-    dist_nmi = dist_nmi_radians, # DECISION POINT
+    dist_nmi = dist_nmi_radians, # DECISION POINT #1: Use method RADIANS/METHOD 2
+    # dist_km = dist_km_projected, # DECISION POINT - using projected
+    # dist_nmi = dist_nmi_projected, # DECISION POINT #2: Use method PROJECTED/METHOD 1
     # velocity_kmhr = dist_km/6, # distance (km) over time (6 hours)
     currentspeed_cms = (dist_km*100000)/(60*60*6) # distance (cm) over time (in seconds, 6 hours between)
   ) 
@@ -689,30 +743,35 @@ roms_dat <- roms_dat |>
 ### Create lines from points --------------------------------------------------
 
 roms_dat_lines <- roms_dat |>
+  dplyr::filter(currentspeed_cms != 0) |> # issue for 375 m 1993 from feb 18-march 8
   dplyr::group_by(date, year, depth_m, filename) |>
   dplyr::summarise(
     do_union = FALSE,
+    gmt_min  = min(gmt, na.rm = TRUE),
     dist_km_sum = sum(dist_km, na.rm = TRUE), 
     dist_nmi_sum = sum(dist_nmi, na.rm = TRUE), 
     obs = n(), 
-    # average of all speed observations (all values/count aka number of rows)
-    currentspeed_mean_by_averagecms = mean(currentspeed_cms, na.rm = TRUE), 
-    currentspeed_mean_by_sdcms = sd(currentspeed_cms, na.rm = TRUE), 
-    currentspeed_min = min(currentspeed_cms, na.rm = TRUE), 
-    currentspeed_max = max(currentspeed_cms, na.rm = TRUE)) |> 
+    # METHOD 1: average of all speed observations (all values/count aka number of rows)
+    currentspeed_cms_mean_byobs = mean(currentspeed_cms, na.rm = TRUE), 
+    currentspeed_cms_sd_byobs = sd(currentspeed_cms, na.rm = TRUE), 
+    currentspeed_cms_min = min(currentspeed_cms, na.rm = TRUE), 
+    currentspeed_cms_max = max(currentspeed_cms, na.rm = TRUE)) |> 
   sf::st_cast("LINESTRING") |> 
   dplyr::ungroup() |> 
+  dplyr::arrange(gmt_min) |> 
   dplyr::mutate(
+    date = factor(x = date, levels = date, labels = date, ordered = TRUE),
+    # year = factor(x = year, levels = year, labels = year, ordered = TRUE),
     # total distance divided by total time - em thinks is less precise  
-    currentspeed_mean_bytotaldisttime = (dist_km_sum*100000)/(24*(obs/4)*60*60), 
-    currentspeed_mean = currentspeed_mean_by_averagecms) |> # DECISION POINT
-  dplyr::arrange(filename)
+    currentspeed_cms_mean_bytotaldisttime = (dist_km_sum*100000)/(24*(obs/4)*60*60), # METHOD 2
+    currentspeed_cms_mean = currentspeed_cms_mean_byobs) # DECISION POINT #2: Use OBS mean and SD/METHOD 1 
+
 
 ## map plot -------------------------------------------------------------------
 
 p21 <- ggplot2::ggplot() +
   
-  ### Map shapefile aesthetics ----------------------------------
+  ### Map shapefile aesthetics
 # Manage Axis extents (limits) and breaks
 ggplot2::geom_sf(data = world_coordinates,
                  fill = "grey10",
@@ -743,7 +802,7 @@ ggplot2::geom_sf(data = world_coordinates,
   #   size = 2, 
   #   show.legend = FALSE) +
   
-  ### Plot data ----------------------------------------------------------------
+  ### Plot data
 
 ggplot2::geom_sf(
   data = roms_dat_lines, 
@@ -761,7 +820,6 @@ ggplot2::geom_sf(
       geometry = geometry), 
     # alpha = 0.7,
     size = 3) + 
-  ggplot2::facet_wrap(~date) + # filename
   ggplot2::scale_color_viridis_d(name = "Depth (m)", option = "D", begin = .2, end = .8) + 
   ggplot2::ggtitle(label = "Larval Grenadier Modeled ROMS Dispersal", 
                    subtitle = "At different depths, years, and environmental conditions") + 
@@ -769,7 +827,7 @@ ggplot2::geom_sf(
                                 na.value = NA,
                                 na.translate = FALSE) +
   
-  ### Plot aesthetics ----------------------------------
+  ### Plot aesthetics
 
 ggplot2::coord_sf(xlim = c(max(roms_dat$X), min(roms_dat$X)),
                   ylim = c(max(roms_dat$Y), min(roms_dat$Y))) +
@@ -796,28 +854,48 @@ ggplot2::coord_sf(xlim = c(max(roms_dat$X), min(roms_dat$X)),
   )
 
 
-p21
+p21 # everything altogether
 
-ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.png"),
-       plot=p21, width=6, height=6)
-ggsave(filename = paste0("./output/Grenadier_larv_ROMS_plot21_Test.tiff"),
-       plot=p21, width=6, height=6)
+#### facet by date -------------------------------------------------------------------
+pp <- p21 + ggplot2::facet_wrap(~factor(date), 
+                                labeller = label_wrap_gen(width = 25), 
+                                ncol = 3)
+# # change file names by year
+ggsave(filename = paste0("./output/Gren_larv_ROMS_plot21_facetdate.png"),
+       plot=pp, 
+       width=6, height=6)
+ggsave(filename = paste0("./output/Gren_larv_ROMS_plot21_facetdate.tiff"),
+       plot=pp,
+       width=6, height=6)
+
+#### facet by year -------------------------------------------------------------------
+pp <- p21 + ggplot2::facet_wrap(~year)
+# # change file names by year
+ggsave(filename = paste0("./output/Gren_larv_ROMS_plot21_facetyear.png"),
+       plot=pp, 
+       width=6, height=6)
+ggsave(filename = paste0("./output/Gren_larv_ROMS_plot21_facetyear.tiff"),
+       plot=pp, 
+       width=6, height=6)
 
 ### summary table -------------------------------------------------------------
 
 t21 <- roms_dat_lines |> 
   dplyr::mutate(depth_m = as.numeric(paste0(depth_m))) |>
   sf::st_drop_geometry() |> 
-  dplyr::select(-year) |> # -obs,  , -currentspeed_mean_bytotaldisttime, -currentspeed_mean_by_averagecms) |> 
+  dplyr::select(-year, -currentspeed_cms_mean) |> # -obs,  , -currentspeed_cms_mean_bytotaldisttime, -currentspeed_cms_mean_by_averagecms) |> 
   flextable::flextable()  |> 
   flextable::set_header_labels(
     date = "Date range",
+    obs = "Number of 6 hour intervals",
     depth_m = "Current Depth (m)",
     dist_km_sum ="Distance traveled (km)",
     dist_nmi_sum ="Distance traveled (nmi)",
-    currentspeed_mean = "Mean current speed (cm/s)",
-    currentspeed_min = "Low current speed (cm/s)",
-    currentspeed_max = "High current speed (cm/s)"
+    currentspeed_cms_mean_byobs = "Mean current speed (cm/s)",
+    currentspeed_cms_sd_byobs = "SD current speed (cm/s)",
+    currentspeed_cms_min = "Low current speed (cm/s)",
+    currentspeed_cms_max = "High current speed (cm/s)", 
+    currentspeed_cms_mean_bytotaldisttime = "Mean current speed by TOTAL (cm/s)"
   ) |>
   flextable::merge_v(j = "date") |>
   flextable::colformat_double(
@@ -836,6 +914,8 @@ t21 <- roms_dat_lines |>
   flextable::width(width = 1.5, j = "date")
 
 t21
+save_as_docx(t21, path = paste0("./output/Gren_larv_ROMS_summary_speed.docx"))
+
 
 ### compare -------------
 
@@ -957,6 +1037,10 @@ compare_roms_outputs_dat_sums <- compare_roms_outputs_dat |>
 summary(compare_roms_outputs_dat)
 
 t(compare_roms_outputs_dat_sums)
+
+# Make report ------------------------------------------------------------------
+
+
 
 
 
