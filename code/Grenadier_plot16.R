@@ -726,6 +726,10 @@ for (i in 1:length(a)) {
     dplyr::bind_rows(temp)
 }
 
+### Added filter for year if want to run 1 year at a time. Next 2007 then add here to run above .pos files
+roms_dat <- roms_dat |> 
+  dplyr::filter(year ==  1993)
+
 roms_dat <- roms_dat |> 
   dplyr::ungroup() |>
   dplyr::arrange(depth_m)  |> 
