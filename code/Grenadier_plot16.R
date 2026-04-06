@@ -455,7 +455,7 @@ p17 <- ggplot2::ggplot() +
   )
 
 str00 <- "example variable"
-str0 <- paste0(str00, ": Note run Source gives all new plots. Just leave them and overwrite them continuously, unless I want to save a version for something. notes about figure and process: Hatch date was calculated using capture date and slow growth rate see file GrenadierLarv_xy_time_stepDEC24MMP_Nedv3Calc_date_hatchESTIMATE.xml. At hatch day larva is one day old. Also explained in .pos file compilation drftB_depth_1993_07_08_09_6hr_data_slow_fast.xml. Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run) for depth 375 m see code drftB_375m_1993_0429_6hr.pos, 34035. Next step 1) ground truth the GMT date to a real date. It is in output to file Gren_larv_ROMS_summary_speed.doc as the hatch and  capture dates.  Also, 2) why the output file  compare_roms_outputs_dat.csv is still outputting 1993 only (2007 is missing). Note that and that file Gren_larv_ROMS_summary_speed.doc is summarized as roms_dat_lines from roms_dat. So roms_dat has the math At each data point, and roms_dat_lines has the summary statistics by year and depth (maybe on more thing). One issue I've found is that in 2007 I get a date discrepancy (by a day) instead of # Hatch date February 28 (GMT =  39138) (expected input), the output file shows February 27 th  (file Gren_larv_ROMS_summary_speed.doc). Oddly  the 1993 data output look correct.")
+str0 <- paste0(str00, ": Note run Source gives all new plots. Just leave them and overwrite them continuously, unless I want to save a version for something. notes about figure and process: Hatch date was calculated using capture date and slow growth rate see file GrenadierLarv_xy_time_stepDEC24MMP_Nedv3Calc_date_hatchESTIMATE.xml. At hatch day larva is one day old. Also explained in .pos file compilation drftB_depth_1993_07_08_09_6hr_data_slow_fast.xml. Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run) for depth 375 m see code drftB_375m_1993_0429_6hr.pos, 34035. Next step 1) ground truth the GMT date to a real date. It is in output to file Gren_larv_ROMS_summary_speed.doc as the hatch and  capture dates.  Also, 2) why the output file  compare_roms_outputs_dat.csv is still outputting 1993 only (2007 is missing). Note that and that file Gren_larv_ROMS_summary_speed.doc is summarized as roms_dat_lines from roms_dat. So roms_dat has the math At each data point, and roms_dat_lines has the summary statistics by year and depth (maybe on more thing). One issue I've found is that in 2007 I get a date discrepancy (by a day) instead of # Hatch date February 28 (GMT =  39138) (expected input), the output file shows February 27 th  (file Gren_larv_ROMS_summary_speed.doc). Oddly  the 1993 data output look correct.FIX: it is likely b/c of the math. Note Subtraction of GMT values + 1 = number of days particle drift. This returns correct hatch date.")
 p17
 
 ## Plot and save data ----------------------------------------------------------
@@ -593,56 +593,58 @@ for (i in 1:length(a)) {
   # This just deals with establishing a cut off date, if there is one
   file_cutoff_dates <- data.frame(matrix(data = c(
     # 
-    # # 2008
-    # "drftB_100m_2008_0220_6hr.pos", 0, 
-    # "drftB_100m_2008_0224_6hr.pos", 0, 
-    # "drftB_200m_2008_0220_6hr.pos", 0, 
-    # "drftB_200m_2008_0224_6hr.pos", 0,     
-    # "drftB_300m_2008_0220_6hr.pos", 0, 
-    # "drftB_300m_2008_0224_6hr.pos", 0,
-    # "drftB_300m_2008_0226_6hr.pos", 0,     
-    # "drftB_400m_2008_0220_6hr.pos", 0, 
-    # "drftB_400m_2008_0224_6hr.pos", 0, 
-    # "drftB_400m_2008_0226_6hr.pos", 0,     
-    # "drftB_450m_2008_0226_6hr.pos", 0, 
-    # "drftB_500m_2008_0220_6hr.pos", 0,
-    # "drftB_500m_2008_0224_6hr.pos", 0,
-    # "drftB_600m_2008_0224_6hr.pos", 0,
-    #
     
     # 
     # #2009
-    # "drftB_100m_2009_0227_6hr.pos", 0, 
-    # "drftB_100m_2009_0301_6hr.pos", 0,
-    # "drftB_100m_2009_0302_6hr.pos", 0, 
-    # "drftB_200m_2009_0227_6hr.pos", 0,
-    # "drftB_200m_2009_0301_6hr.pos", 0, 
-    # "drftB_200m_2009_0302_6hr.pos", 0,     
-    # "drftB_300m_2009_0227_6hr.pos", 0, 
-    # "drftB_300m_2009_0301_6hr.pos", 0, 
-    # "drftB_300m_2009_0302_6hr.pos", 0, 
-    # "drftB_400m_2009_0227_6hr.pos", 0,
-    # "drftB_400m_2009_0301_6hr.pos", 0, 
-    # "drftB_400m_2009_0302_6hr.pos", 0, 
-    # "drftB_450m_2009_0302_6hr.pos", 0,
-    # "drftB_500m_2009_0227_6hr.pos", 0, 
-    # "drftB_500m_2009_0301_6hr.pos", 0, 
-    # "drftB_600m_2009_0227_6hr.pos", 0,
+    # "drftB_100m_2009_0227_6hr.pos", 0, # 39842, # 28 days for example
+    "drftB_100m_2009_0227_6hr.pos", 39842, # Hatch date January 31 (GMT =  39842) - last day of roms run is the capture date February 27 (GMT = 39869)    
+    "drftB_200m_2009_0227_6hr.pos", 39842,
+    "drftB_300m_2009_0227_6hr.pos", 39842,
+    "drftB_400m_2009_0227_6hr.pos", 39842,
+    "drftB_500m_2009_0227_6hr.pos", 39842, 
+    "drftB_600m_2009_0227_6hr.pos", 39842,
+    "drftB_100m_2009_0301_6hr.pos", 39863, # Hatch date February 21 (GMT =  39863) - last day of roms run is the capture date March 1 (GMT = 39871)    
+    "drftB_200m_2009_0301_6hr.pos", 39863,
+    "drftB_300m_2009_0301_6hr.pos", 39863, 
+    "drftB_400m_2009_0301_6hr.pos", 39863,
+    "drftB_500m_2009_0301_6hr.pos", 39863, 
+    "drftB_100m_2009_0302_6hr.pos", 39832, # Hatch date January 21 (GMT =  39832) - last day of roms run is the capture date March 2 (GMT = 39872)    
+    "drftB_200m_2009_0302_6hr.pos", 39832,     
+    "drftB_300m_2009_0302_6hr.pos", 39832, 
+    "drftB_400m_2009_0302_6hr.pos", 39832, 
+    "drftB_450m_2009_0302_6hr.pos", 39832,
+    
+    # # 2008
+    # "drftB_100m_2008_0220_6hr.pos", 0, # 39473, # 24 days for example
+    "drftB_100m_2008_0220_6hr.pos", 39473, # Hatch date January 28 (GMT =  39473) - last day of roms run is the capture date February 20 (GMT = 39496)    
+    "drftB_200m_2008_0220_6hr.pos", 39473, 
+    "drftB_300m_2008_0220_6hr.pos", 39473,
+    "drftB_400m_2008_0220_6hr.pos", 39473, 
+    "drftB_500m_2008_0220_6hr.pos", 39473,
+    "drftB_100m_2008_0224_6hr.pos", 39477, # Hatch date February 1 (GMT =  39477) - last day of roms run is the capture date February 24 (GMT = 39500)    
+    "drftB_200m_2008_0224_6hr.pos", 39477,     
+    "drftB_300m_2008_0224_6hr.pos", 39477,
+    "drftB_400m_2008_0224_6hr.pos", 39477, 
+    "drftB_500m_2008_0224_6hr.pos", 39477,
+    "drftB_600m_2008_0224_6hr.pos", 39477,
+    "drftB_300m_2008_0226_6hr.pos", 39467,  # Hatch date January 22 (GMT =  39467) - last day of roms run is the capture date February 26 (GMT = 39502)    
+    "drftB_400m_2008_0226_6hr.pos", 39467,     
+    "drftB_450m_2008_0226_6hr.pos", 39467, 
     
     # # 2007
-    # "drftB_100m_2007_0510_6hr.pos", 39196 # 14 days for example
-    "drftB_100m_2007_0510_6hr.pos", 39196, # Hatch date April 27 (GMT =  39196) - last day of roms run is the capture date May 10 (GMT = 39210) 
-    "drftB_200m_2007_0510_6hr.pos", 39196, 
-    "drftB_300m_2007_0510_6hr.pos", 39196,
-    "drftB_100m_2007_0515_6hr.pos", 39138, # Hatch date February 28 (GMT =  39138) - last day of roms run is the capture date May 15 (GMT = 39215) 
-    "drftB_200m_2007_0515_6hr.pos", 39138,
-    "drftB_300m_2007_0515_6hr.pos", 39138, 
-    "drftB_100m_2007_0517_6hr.pos", 39204, # Hatch date May 5 (GMT =  39204) - last day of roms run is the capture date May 17 (GMT = 39217) 
-    "drftB_200m_2007_0517_6hr.pos", 39204, 
-    "drftB_300m_2007_0517_6hr.pos", 39204,    
-    "drftB_400m_2007_0517_6hr.pos", 39204,
-    "drftB_500m_2007_0517_6hr.pos", 39204, 
-    "drftB_600m_2007_0517_6hr.pos", 39204,
+    # "drftB_100m_2007_0510_6hr.pos", 39197 # 14 days for example
+    "drftB_100m_2007_0510_6hr.pos", 39197, # Hatch date April 27 (GMT =  39196) - last day of roms run is the capture date May 10 (GMT = 39210) 
+    "drftB_200m_2007_0510_6hr.pos", 39197, 
+    "drftB_300m_2007_0510_6hr.pos", 39197,
+    "drftB_100m_2007_0515_6hr.pos", 39139, # Hatch date February 28 (GMT =  39138) - last day of roms run is the capture date May 15 (GMT = 39215) 
+    "drftB_200m_2007_0515_6hr.pos", 39139,
+    "drftB_300m_2007_0515_6hr.pos", 39139, 
+    "drftB_100m_2007_0517_6hr.pos", 39205, # Hatch date May 5 (GMT =  39204) - last day of roms run is the capture date May 17 (GMT = 39217) 
+    "drftB_200m_2007_0517_6hr.pos", 39205, 
+    "drftB_300m_2007_0517_6hr.pos", 39205,    
+    "drftB_400m_2007_0517_6hr.pos", 39205,
+    "drftB_500m_2007_0517_6hr.pos", 39205, 
+    "drftB_600m_2007_0517_6hr.pos", 39205,
      
     # 1993
     #"drftB_375m_1993_0429_6hr.pos", 34035  #  Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run). This must get used for the larval drift tracks not the calculation of current speed???
@@ -730,14 +732,23 @@ for (i in 1:length(a)) {
     dplyr::bind_rows(temp)
 }
   # around line 729 you could add this code to artificially crop the dataset: 
+  # roms_dat <- roms_dat |> 
+  #2) change this to 
 
-#roms_dat <- roms_dat |> 
+  #year %in% c(1993, 2007)
+
+  
+  #roms_dat <- roms_dat |> 
   #dplyr::filter(year ==  1993) 
   #year %in% c(1993, 2007)
 
-  ### Added filter for year if want to run 1 year at a time. Next 2007 then add here to run above .pos files
-roms_dat <- roms_dat |> 
-  dplyr::filter(year ==  2007)
+#tried this, but didn't work
+#roms_dat <- roms_dat |> 
+  #year %in% c(1993, 2007)
+
+  ### Added filter for year if want to run 1 year at a time. Next 2009 then add here to run above .pos files
+#roms_dat <- roms_dat |> 
+  #dplyr::filter(year ==  2009)
 
 roms_dat <- roms_dat |> 
   dplyr::ungroup() |>
@@ -961,6 +972,18 @@ save_as_docx(t21, path = paste0("./output/Gren_larv_ROMS_summary_speed.docx"))
 #                 dist_nmi_radians, 
 #                 dist_km_radians)
 
+### This all worked but was only year and depth specific. Turn back on below after sf::st_drop_geometry() |>
+#temp <- roms_dat |> # compare all available data
+# sf::st_drop_geometry() |> 
+ #dplyr::filter(
+    #year == 1993 &
+      #depth_m == 300) |> 
+# dplyr::mutate(
+
+### Tried below since need all depths and years. This only partially worked  (shorter version of code). This produced NA in many fields so really cannot make comparison.
+# temp <- roms_dat |> # compare all available data
+#   sf::st_drop_geometry() |>
+
 temp <- roms_dat |> # compare all available data
   sf::st_drop_geometry() |> 
   dplyr::filter(
@@ -974,14 +997,27 @@ temp <- roms_dat |> # compare all available data
                 dist_nmi_projected, dist_km_projected, 
                 dist_nmi_radians, dist_km_radians)
 
+### This all worked but need all depths and years. So turned off and tried shorter verion of code.
+#compare_roms_outputs_dat <- read_excel(
+#path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
+#skip = 5) |> 
+  #janitor::clean_names() |> 
+  #dplyr::select(lat = dec_lat, lon = dec_long, dist_nmi_radiansexcel = distance_nm) |> 
+  #dplyr::mutate(lon = lon*-1, 
+                #depth_m = 300, 
+                #year = 1993, 
+                #dist_km_radiansexcel = dist_nmi_radiansexcel*1.852) |> 
+  #dplyr::filter(!is.na(lat)) |>
+
+
 compare_roms_outputs_dat <- read_excel(
   path = "./data/StationDistanceCalc_6hr_AnnotatedMACE_Paquin.xlsx", 
   skip = 5) |> 
   janitor::clean_names() |> 
   dplyr::select(lat = dec_lat, lon = dec_long, dist_nmi_radiansexcel = distance_nm) |> 
   dplyr::mutate(lon = lon*-1, 
-                depth_m = 300, 
-                year = 1993, 
+                #depth_m = 300, 
+                #year = 1993, 
                 dist_km_radiansexcel = dist_nmi_radiansexcel*1.852) |> 
   dplyr::filter(!is.na(lat)) |>
   # dplyr::full_join(
