@@ -765,7 +765,7 @@ roms_dat <- roms_dat |>
   ) 
 
 ### Create lines from points --------------------------------------------------
-
+### Calculation of average speed. Therefore SD method preferred.
 roms_dat_lines <- roms_dat |>
   dplyr::filter(currentspeed_cms != 0) |> # issue for 375 m 1993 from feb 18-march 8
   dplyr::group_by(date, year, depth_m, filename) |>
@@ -986,9 +986,9 @@ save_as_docx(t21, path = paste0("./output/Gren_larv_ROMS_summary_speed.docx"))
 
 temp <- roms_dat |> # compare all available data
   sf::st_drop_geometry() |> 
-  dplyr::filter(
-    year == 1993 &
-      depth_m == 300) |> 
+  # dplyr::filter(
+  #   year == 1993 &
+  #     depth_m == 300) |> 
   dplyr::mutate(
     # gmt = gmt + 0.25,
     year = as.numeric(paste0(year)), 
