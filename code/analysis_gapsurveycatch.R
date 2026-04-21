@@ -4,6 +4,12 @@ source("./code/functions.R")
 
 ## load data from GAP_PRODUCTS -------------------------------------------------
 
+
+# Documentation
+# https://afsc-gap-products.github.io/gap_products/
+# https://www.fisheries.noaa.gov/resource/document/groundfish-survey-species-code-manual-and-data-codes-manual  
+
+# # Sign into Oracle
 # oracle_user <- "paquinm"
 # oracle_pw <- "INSERT" # NEED!
 # channel <- RODBC::odbcConnect(dsn = "AFSC", 
@@ -11,22 +17,30 @@ source("./code/functions.R")
 #                               pwd = oracle_pw, 
 #                               believeNRows = FALSE)
 # 
-# 
-# specimen_gap <- RODBC::sqlQuery(channel_products, 
+# # Download data
+# specimen_gap <- RODBC::sqlQuery(channel, 
 #                                      paste0("SELECT * 
 # FROM GAP_PRODUCTS.AKFIN_SPECIMEN
 # WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
 # write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
 # 
 # 
-# sizecomp_gap <- RODBC::sqlQuery(channel_products, 
+# sizecomp_gap <- RODBC::sqlQuery(channel, 
 #                                      paste0("SELECT * 
 # FROM GAP_PRODUCTS.AKFIN_SIZECOMP
 # WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
 # write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
+#
+# catch_gap <- RODBC::sqlQuery(channel, 
+#                                      paste0("SELECT * 
+# FROM GAP_PRODUCTS.AKFIN_CATCH
+# WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+# write.csv(x = catch_gap, file = "data/catch_gap.csv")
+# 
 
 specimen_gap <- read.csv("data/specimen_gap.csv")
 sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
+catch_gap <- read.csv("data/catch_gap.csv")
 
 
 
