@@ -43,11 +43,14 @@ library("RODBC")
 # sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
 # catch_gap <- read.csv("data/catch_gap.csv")
 
-specimen_gap_all <- # even the bad hauls!
-  RODBC::sqlQuery(channel, paste0(
-    "SELECT DISTINCT
+ specimen_gap_all <- # even the bad hauls!
+   RODBC::sqlQuery(channel, paste0(
+     "SELECT DISTINCT
   s.SPECIMEN_ID, 
   s.SPECIES_CODE, 
+  t.COMMON_NAME, 
+  t.SPECIES_NAME,
+  t.ID_RANK, 
   s.LENGTH_MM, 
   s.SEX, 
   s.WEIGHT_G, 
@@ -82,8 +85,11 @@ JOIN RACEBASE.HAUL hhh
   ON hhh.CRUISEJOIN = hhh.CRUISEJOIN AND hhh.VESSEL = A.VESSEL_ID AND hhh.STATIONID = h.STATION AND hhh.STRATUM = h.STRATUM 
 JOIN GAP_PRODUCTS.AKFIN_SPECIMEN s
   ON hhh.HAULJOIN = s.HAULJOIN
-WHERE s.SPECIES_CODE IN (24001, 21220, 21232, 21230);"))
-write.csv(x = specimen_gap_all, file = "data/specimen_gap_all.csv")
+JOIN GAP_PRODUCTS.TAXONOMIC_CLASSIFICATION t
+ON t.SPECIES_CODE = s.SPECIES_CODE
+WHERE s.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21238, 21240, 24001)
+AND t.SURVEY_SPECIES = 1;"))
+ write.csv(x = specimen_gap_all, file = "data/specimen_gap_all.csv")
 
 specimen_gap_all <- read.csv("data/specimen_gap_all.csv")
 
