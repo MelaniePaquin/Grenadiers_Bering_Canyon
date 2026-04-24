@@ -83,7 +83,7 @@ JOIN RACEBASE.HAUL hhh
 JOIN GAP_PRODUCTS.AKFIN_SPECIMEN s
   ON hhh.HAULJOIN = s.HAULJOIN
 WHERE s.SPECIES_CODE IN (24001, 21220, 21232, 21230);"))
-write.csv(x = catch_gap, file = "data/catch_gap.csv")
+write.csv(x = specimen_gap_all, file = "data/specimen_gap_all.csv")
 
 specimen_gap_all <- read.csv("data/specimen_gap_all.csv")
 
