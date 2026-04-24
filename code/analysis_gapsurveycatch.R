@@ -18,34 +18,41 @@ library("RODBC")
                                pwd = oracle_pw, 
                                believeNRows = FALSE)
  
-# # Download data
- specimen_gap <- RODBC::sqlQuery(channel, 
-                                      paste0("SELECT * 
- FROM GAP_PRODUCTS.AKFIN_SPECIMEN
- WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
- 
- 
- sizecomp_gap <- RODBC::sqlQuery(channel, 
-                                      paste0("SELECT * 
- FROM GAP_PRODUCTS.AKFIN_SIZECOMP
- WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
+# # # Download data
+#  specimen_gap <- RODBC::sqlQuery(channel, 
+#                                       paste0("SELECT * 
+#  FROM GAP_PRODUCTS.AKFIN_SPECIMEN
+#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+#  write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
+#  
+#  
+#  sizecomp_gap <- RODBC::sqlQuery(channel, 
+#                                       paste0("SELECT * 
+#  FROM GAP_PRODUCTS.AKFIN_SIZECOMP
+#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+#  write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
+# 
+#  catch_gap <- RODBC::sqlQuery(channel, 
+#                                       paste0("SELECT * 
+#  FROM GAP_PRODUCTS.AKFIN_CATCH
+#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+#  write.csv(x = catch_gap, file = "data/catch_gap.csv")
+#  
+# 
+# specimen_gap <- read.csv("data/specimen_gap.csv")
+# sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
+# catch_gap <- read.csv("data/catch_gap.csv")
 
- catch_gap <- RODBC::sqlQuery(channel, 
-                                      paste0("SELECT * 
- FROM GAP_PRODUCTS.AKFIN_CATCH
- WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = catch_gap, file = "data/catch_gap.csv")
- 
-
-specimen_gap <- read.csv("data/specimen_gap.csv")
-sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
-catch_gap <- read.csv("data/catch_gap.csv")
-
-haul_gap_all <- # even the bad hauls!
+specimen_gap_all <- # even the bad hauls!
   RODBC::sqlQuery(channel, paste0(
     "SELECT 
+s.SPECIMEN_ID, 
+s.SPECIES_CODE, 
+s.LENGTH_MM, 
+s.SEX, 
+s.WEIGHT_G, 
+s.AGE, 
+s.SPECIMEN_SAMPLE_TYPE, 
 c.CRUISE, 
 c.CRUISEJOIN,
 c.YEAR, 
@@ -61,7 +68,15 @@ h.BOTTOM_DEPTH,
 h.SURFACE_TEMPERATURE, 
 h.GEAR_TEMPERATURE
 FROM RACEBASE.HAUL h
-JOIN GAP_PRODUCTS.AKFIN_CRUISE c ON c.CRUISEJOIN = h.CRUISEJOIN"))
+JOIN GAP_PRODUCTS.AKFIN_CRUISE c 
+ON c.CRUISEJOIN = h.CRUISEJOIN
+JOIN GAP_PRODUCTS.AKFIN_SPECIMEN s
+ON h.HAULJOIN = s.HAULJOIN
+WHERE s.SPECIES_CODE IN (24001, 21220, 21232, 21230);"))
+write.csv(x = catch_gap, file = "data/catch_gap.csv")
+
+specimen_gap_all <- read.csv("data/specimen_gap_all.csv")
+
 
 # Plot maps of where grenadier were found by year ------------------------------
 
