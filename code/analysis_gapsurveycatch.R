@@ -19,70 +19,70 @@ library("RODBC")
                                believeNRows = FALSE)
  
 # # # Download data
-#  specimen_gap <- RODBC::sqlQuery(channel, 
-#                                       paste0("SELECT * 
-#  FROM GAP_PRODUCTS.AKFIN_SPECIMEN
-#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
-#  write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
+ specimen_gap <- RODBC::sqlQuery(channel,
+                                      paste0("SELECT *
+ FROM GAP_PRODUCTS.AKFIN_SPECIMEN
+ WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+ write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
 #  
 #  
-#  sizecomp_gap <- RODBC::sqlQuery(channel, 
-#                                       paste0("SELECT * 
-#  FROM GAP_PRODUCTS.AKFIN_SIZECOMP
-#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
-#  write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
+ sizecomp_gap <- RODBC::sqlQuery(channel,
+                                      paste0("SELECT *
+ FROM GAP_PRODUCTS.AKFIN_SIZECOMP
+ WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+ write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
 # 
-#  catch_gap <- RODBC::sqlQuery(channel, 
-#                                       paste0("SELECT * 
-#  FROM GAP_PRODUCTS.AKFIN_CATCH
-#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
-#  write.csv(x = catch_gap, file = "data/catch_gap.csv")
+ catch_gap <- RODBC::sqlQuery(channel,
+                                      paste0("SELECT *
+ FROM GAP_PRODUCTS.AKFIN_CATCH
+ WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+ write.csv(x = catch_gap, file = "data/catch_gap.csv")
 #  
 # 
-# specimen_gap <- read.csv("data/specimen_gap.csv")
-# sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
-# catch_gap <- read.csv("data/catch_gap.csv")
+specimen_gap <- read.csv("data/specimen_gap.csv")
+sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
+catch_gap <- read.csv("data/catch_gap.csv")
 
  specimen_gap_all <- # even the bad hauls!
    RODBC::sqlQuery(channel, paste0(
      "SELECT DISTINCT
-  s.SPECIMEN_ID, 
-  s.SPECIES_CODE, 
-  t.COMMON_NAME, 
+  s.SPECIMEN_ID,
+  s.SPECIES_CODE,
+  t.COMMON_NAME,
   t.SPECIES_NAME,
-  t.ID_RANK, 
-  s.LENGTH_MM, 
-  s.SEX, 
-  s.WEIGHT_G, 
-  s.AGE, 
-  s.SPECIMEN_SAMPLE_TYPE, 
-  c.CRUISE, 
+  t.ID_RANK,
+  s.LENGTH_MM,
+  s.SEX,
+  s.WEIGHT_G,
+  s.AGE,
+  s.SPECIMEN_SAMPLE_TYPE,
+  c.CRUISE,
   c.CRUISEJOIN,
-  c.YEAR, 
-  c.SURVEY_DEFINITION_ID, 
-  hhh.STATIONID AS STATION, 
-  hhh.STRATUM, 
-  hhh.HAUL, 
-  c.VESSEL_ID, 
-  c.VESSEL_NAME, 
+  c.YEAR,
+  c.SURVEY_DEFINITION_ID,
+  hhh.STATIONID AS STATION,
+  hhh.STRATUM,
+  hhh.HAUL,
+  c.VESSEL_ID,
+  c.VESSEL_NAME,
   c.SURVEY_NAME,
-  hhh.START_LATITUDE, 
-  hhh.START_LONGITUDE, 
-  hhh.BOTTOM_DEPTH, 
-  hhh.SURFACE_TEMPERATURE, 
+  hhh.START_LATITUDE,
+  hhh.START_LONGITUDE,
+  hhh.BOTTOM_DEPTH,
+  hhh.SURFACE_TEMPERATURE,
   hhh.GEAR_TEMPERATURE
 FROM RACE_DATA.HAULS h
 -- Integrate RACE_DATA tables
-JOIN RACE_DATA.CRUISES A 
+JOIN RACE_DATA.CRUISES A
   ON h.CRUISE_ID = A.CRUISE_ID
-JOIN RACE_DATA.SURVEYS S 
+JOIN RACE_DATA.SURVEYS S
   ON S.SURVEY_ID = A.SURVEY_ID
-JOIN RACE_DATA.SURVEY_DEFINITIONS SD 
+JOIN RACE_DATA.SURVEY_DEFINITIONS SD
   ON SD.SURVEY_DEFINITION_ID = S.SURVEY_DEFINITION_ID
-JOIN GAP_PRODUCTS.AKFIN_CRUISE c 
-  ON A.RACEBASE_CRUISEJOIN = c.CRUISEJOIN  
-JOIN RACEBASE.HAUL hhh 
-  ON hhh.CRUISEJOIN = hhh.CRUISEJOIN AND hhh.VESSEL = A.VESSEL_ID AND hhh.STATIONID = h.STATION AND hhh.STRATUM = h.STRATUM 
+JOIN GAP_PRODUCTS.AKFIN_CRUISE c
+  ON A.RACEBASE_CRUISEJOIN = c.CRUISEJOIN
+JOIN RACEBASE.HAUL hhh
+  ON hhh.CRUISEJOIN = hhh.CRUISEJOIN AND hhh.VESSEL = A.VESSEL_ID AND hhh.STATIONID = h.STATION AND hhh.STRATUM = h.STRATUM
 JOIN GAP_PRODUCTS.AKFIN_SPECIMEN s
   ON hhh.HAULJOIN = s.HAULJOIN
 JOIN GAP_PRODUCTS.TAXONOMIC_CLASSIFICATION t
