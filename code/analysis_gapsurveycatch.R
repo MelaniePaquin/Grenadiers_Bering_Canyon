@@ -11,6 +11,8 @@ library("RODBC")
 # https://www.fisheries.noaa.gov/resource/document/groundfish-survey-species-code-manual-and-data-codes-manual  
 
 # # Sign into Oracle
+source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
+
  oracle_user <- "paquinm"
  oracle_pw <- "Phrynosoma#1" # NEED!
  channel <- RODBC::odbcConnect(dsn = "AFSC", 
@@ -24,76 +26,135 @@ library("RODBC")
  FROM GAP_PRODUCTS.AKFIN_SPECIMEN
  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
  write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
-#  
-#  
+  
+
  sizecomp_gap <- RODBC::sqlQuery(channel,
                                       paste0("SELECT *
  FROM GAP_PRODUCTS.AKFIN_SIZECOMP
  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
  write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
-# 
+
  catch_gap <- RODBC::sqlQuery(channel,
                                       paste0("SELECT *
- FROM GAP_PRODUCTS.AKFIN_CATCH
+ FROM GAP_PRODUCTS.AKFIN_CPUE
  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
  write.csv(x = catch_gap, file = "data/catch_gap.csv")
-#  
-# 
+
 specimen_gap <- read.csv("data/specimen_gap.csv")
 sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
 catch_gap <- read.csv("data/catch_gap.csv")
 
- specimen_gap_all <- # even the bad hauls!
-   RODBC::sqlQuery(channel, paste0(
-     "SELECT DISTINCT
-  s.SPECIMEN_ID,
-  s.SPECIES_CODE,
-  t.COMMON_NAME,
+specimen_gap_all <- # connects all hauls (even bad hauls!) with specimen data
+  RODBC::sqlQuery(channel, paste0(
+    "SELECT DISTINCT
+  s.SPECIMEN_ID, 
+  s.SPECIES_CODE, 
+  t.COMMON_NAME, 
   t.SPECIES_NAME,
-  t.ID_RANK,
-  s.LENGTH_MM,
-  s.SEX,
-  s.WEIGHT_G,
-  s.AGE,
-  s.SPECIMEN_SAMPLE_TYPE,
-  c.CRUISE,
+  t.ID_RANK, 
+  s.LENGTH_MM, 
+  s.SEX, 
+  s.WEIGHT_G, 
+  s.AGE, 
+  s.SPECIMEN_SAMPLE_TYPE, 
+  c.CRUISE, 
   c.CRUISEJOIN,
-  c.YEAR,
-  c.SURVEY_DEFINITION_ID,
-  hhh.STATIONID AS STATION,
-  hhh.STRATUM,
-  hhh.HAUL,
-  c.VESSEL_ID,
-  c.VESSEL_NAME,
+  c.YEAR, 
+  c.SURVEY_DEFINITION_ID, 
+  hhh.STATIONID AS STATION, 
+  hhh.STRATUM, 
+  hhh.HAUL, 
+  c.VESSEL_ID, 
+  c.VESSEL_NAME, 
   c.SURVEY_NAME,
-  hhh.START_LATITUDE,
-  hhh.START_LONGITUDE,
-  hhh.BOTTOM_DEPTH,
-  hhh.SURFACE_TEMPERATURE,
+  hhh.START_LATITUDE, 
+  hhh.START_LONGITUDE, 
+  hhh.BOTTOM_DEPTH, 
+  hhh.SURFACE_TEMPERATURE, 
   hhh.GEAR_TEMPERATURE
 FROM RACE_DATA.HAULS h
 -- Integrate RACE_DATA tables
-JOIN RACE_DATA.CRUISES A
+JOIN RACE_DATA.CRUISES A 
   ON h.CRUISE_ID = A.CRUISE_ID
-JOIN RACE_DATA.SURVEYS S
+JOIN RACE_DATA.SURVEYS S 
   ON S.SURVEY_ID = A.SURVEY_ID
-JOIN RACE_DATA.SURVEY_DEFINITIONS SD
+JOIN RACE_DATA.SURVEY_DEFINITIONS SD 
   ON SD.SURVEY_DEFINITION_ID = S.SURVEY_DEFINITION_ID
-JOIN GAP_PRODUCTS.AKFIN_CRUISE c
-  ON A.RACEBASE_CRUISEJOIN = c.CRUISEJOIN
-JOIN RACEBASE.HAUL hhh
-  ON hhh.CRUISEJOIN = hhh.CRUISEJOIN AND hhh.VESSEL = A.VESSEL_ID AND hhh.STATIONID = h.STATION AND hhh.STRATUM = h.STRATUM
+JOIN GAP_PRODUCTS.AKFIN_CRUISE c 
+  ON A.RACEBASE_CRUISEJOIN = c.CRUISEJOIN  
+JOIN RACEBASE.HAUL hhh 
+  ON hhh.CRUISEJOIN = hhh.CRUISEJOIN AND hhh.VESSEL = A.VESSEL_ID AND hhh.STATIONID = h.STATION AND hhh.STRATUM = h.STRATUM 
 JOIN GAP_PRODUCTS.AKFIN_SPECIMEN s
   ON hhh.HAULJOIN = s.HAULJOIN
 JOIN GAP_PRODUCTS.TAXONOMIC_CLASSIFICATION t
 ON t.SPECIES_CODE = s.SPECIES_CODE
 WHERE s.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21238, 21240, 24001)
 AND t.SURVEY_SPECIES = 1;"))
- write.csv(x = specimen_gap_all, file = "data/specimen_gap_all.csv")
+write.csv(x = specimen_gap_all, file = "data/specimen_gap_all.csv")
 
 specimen_gap_all <- read.csv("data/specimen_gap_all.csv")
 
 
+# catch_gap <- RODBC::sqlQuery(channel,
+#                              paste0("SELECT *
+#  FROM GAP_PRODUCTS.AKFIN_CPUE
+#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+# write.csv(x = catch_gap, file = "data/catch_gap.csv")
+
+
+
+# standard hauls only
+gap_data <- RODBC::sqlQuery(channel,
+                             paste0(
+"SELECT 
+    cc.YEAR, 
+    cc.SURVEY_DEFINITION_ID, 
+    cc.SURVEY_NAME, 
+    cc.CRUISE,
+    cc.CRUISEJOIN,
+    hh.HAULJOIN, 
+    hh.HAUL, 
+    hh.STRATUM, 
+    hh.STATION, 
+    cc.VESSEL_ID, 
+    cc.VESSEL_NAME, 
+    hh.DATE_TIME_START AS DATE_TIME,
+    hh.LATITUDE_DD_START, 
+    hh.LONGITUDE_DD_START, 
+    hh.LATITUDE_DD_END, 
+    hh.LONGITUDE_DD_END, 
+    hh.GEAR_TEMPERATURE_C AS BOTTOM_TEMPERATURE_C,
+    hh.SURFACE_TEMPERATURE_C, 
+    hh.DEPTH_M, 
+    hh.DISTANCE_FISHED_KM, 
+    hh.DURATION_HR, 
+    hh.NET_WIDTH_M,
+    hh.NET_HEIGHT_M,
+    cp.AREA_SWEPT_KM2, 
+    hh.PERFORMANCE,
+    -- Catch specific details
+    cp.SPECIES_CODE,
+    cp.CPUE_KGKM2, 
+    cp.CPUE_NOKM2,
+    cp.COUNT, 
+    cp.WEIGHT_KG, 
+    tc.TAXON_CONFIDENCE
+FROM GAP_PRODUCTS.CPUE cp
+LEFT JOIN GAP_PRODUCTS.AKFIN_HAUL hh 
+    ON cp.HAULJOIN = hh.HAULJOIN
+LEFT JOIN GAP_PRODUCTS.AKFIN_CRUISE cc 
+    ON hh.CRUISEJOIN = cc.CRUISEJOIN
+LEFT JOIN GAP_PRODUCTS.TAXONOMIC_CONFIDENCE tc 
+    ON cp.SPECIES_CODE = tc.SPECIES_CODE 
+    AND cc.SURVEY_DEFINITION_ID = tc.SURVEY_DEFINITION_ID
+    AND cc.YEAR = tc.YEAR
+WHERE cp.WEIGHT_KG > 0
+    AND cc.SURVEY_DEFINITION_ID IN (143, 98, 47, 52, 78)
+    AND cp.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001)")) |> 
+  dplyr::rename_all(tolower) 
+write.csv(x = specimen_gap_all, file = "data/gap_data.csv")
+
+specimen_gap_all <- read.csv("data/gap_data.csv")
 # Plot maps of where grenadier were found by year ------------------------------
 
 ## Groundfish Bottom Trawl Survey catch and haul data (FOSS) -------------------
