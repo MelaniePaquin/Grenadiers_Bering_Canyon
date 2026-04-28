@@ -16,9 +16,9 @@ library("RODBC")
 # https://www.fisheries.noaa.gov/resource/document/groundfish-survey-species-code-manual-and-data-codes-manual  
 
 if (FALSE) { # only em can run this
-# Sign into Oracle
-source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
-
+  # Sign into Oracle
+  source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
+  
   specimen_gap_all <- # connects all hauls (even bad hauls!) with specimen data
     RODBC::sqlQuery(channel, paste0(
       "SELECT DISTINCT
@@ -71,41 +71,32 @@ AND t.SURVEY_SPECIES = 1;"))
 }
 
 # Sign into Oracle
- oracle_user <- "paquinm"
- oracle_pw <- "Phrynosoma#1" # NEED!
- channel <- RODBC::odbcConnect(dsn = "AFSC", 
-                               uid = oracle_user, 
-                               pwd = oracle_pw, 
-                               believeNRows = FALSE)
- 
+oracle_user <- "paquinm"
+oracle_pw <- "Phrynosoma#1" # NEED!
+channel <- RODBC::odbcConnect(dsn = "AFSC", 
+                              uid = oracle_user, 
+                              pwd = oracle_pw, 
+                              believeNRows = FALSE)
+
 # # # Download data
- specimen_gap <- RODBC::sqlQuery(channel,
-                                      paste0("SELECT *
+specimen_gap <- RODBC::sqlQuery(channel,
+                                paste0("SELECT *
  FROM GAP_PRODUCTS.AKFIN_SPECIMEN
  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
-  
+write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
+specimen_gap <- read.csv("data/specimen_gap.csv")
 
- sizecomp_gap <- RODBC::sqlQuery(channel,
-                                      paste0("SELECT *
- FROM GAP_PRODUCTS.AKFIN_SIZECOMP
- WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
-
- catch_gap <- RODBC::sqlQuery(channel,
-                                      paste0("SELECT *
+catch_gap <- RODBC::sqlQuery(channel,
+                             paste0("SELECT *
  FROM GAP_PRODUCTS.AKFIN_CPUE
  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = catch_gap, file = "data/catch_gap.csv")
-
-specimen_gap <- read.csv("data/specimen_gap.csv")
-sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
+write.csv(x = catch_gap, file = "data/catch_gap.csv")
 catch_gap <- read.csv("data/catch_gap.csv")
 
 # standard hauls only
 gap_data <- RODBC::sqlQuery(channel,
-                             paste0(
-"SELECT 
+                            paste0(
+                              "SELECT 
     cc.YEAR, 
     cc.SURVEY_DEFINITION_ID, 
     CASE
@@ -177,7 +168,7 @@ write.csv(x = gap_data, file = "data/gap_data.csv")
 gap_data <- read.csv("data/gap_data.csv")
 
 length_gap <- RODBC::sqlQuery(channel,
-                                paste0("SELECT 
+                              paste0("SELECT 
                                 ll.HAULJOIN, ll.SPECIES_CODE,
                                 tt.SPECIES_NAME, 
     tt.COMMON_NAME, 
@@ -248,72 +239,72 @@ write.csv(x = length_gap, file = "data/length_gap.csv")
 
 ### Download haul data ---------------------------------------------------------
 if (FALSE) { # FOSS APPEARS TO BE DOWN
-dat <- data.frame()
-for (i in seq(0, 500000, 10000)){
-  ## find how many iterations it takes to cycle through the data
-  print(i)
+  dat <- data.frame()
+  for (i in seq(0, 500000, 10000)){
+    ## find how many iterations it takes to cycle through the data
+    print(i)
+    ## query the API link
+    res <- httr::GET(url = paste0(
+      'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_haul/', 
+      "?offset=",i,"&limit=10000"))
+    ## convert from JSON format
+    data <- jsonlite::fromJSON(base::rawToChar(res$content)) 
+    
+    ## if there are no data, stop the loop
+    if (is.null(nrow(data$items))) {
+      break
+    }
+    
+    ## bind sub-pull to dat data.frame
+    dat <- dplyr::bind_rows(dat, 
+                            data$items |>
+                              dplyr::select(-links)) # necessary for API accounting, but not part of the dataset)
+  }
+  dat_haul <- dat
+  
+  ### Download catch data for Grenadier ------------------------------------------
+  
   ## query the API link
-  res <- httr::GET(url = paste0(
-    'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_haul/', 
-    "?offset=",i,"&limit=10000"))
-  ## convert from JSON format
-  data <- jsonlite::fromJSON(base::rawToChar(res$content)) 
+  # data for all walleye pollock caught in all 2023 eastern Bering Sea survey hauls
+  dat <- data.frame()
+  # there must be a better way to select multiple values for one parameter, 
+  # but saving that, we will loop through each hauljoin and collect the data of interest
+  grenadier_codes <- c(21204, # Caelorinchus scaphopsis shoulderspot grenadier
+                       21210, # Coryphaenoides sp.
+                       21220, # Coryphaenoides acrolepis Pacific grenadier
+                       21230, # Albatrossia pectoralis giant grenadier
+                       21232, # Coryphaenoides cinereus popeye grenadier
+                       21238, # Coryphaenoides filifer filamented grenadier
+                       21239 # Coryphaenoides longifilis longfin grenadier
+  )
   
-  ## if there are no data, stop the loop
-  if (is.null(nrow(data$items))) {
-    break
+  for (i in grenadier_codes) {
+    res <- httr::GET(url = paste0(
+      'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_catch/', 
+      '?q={"species_code":',i,'}'))
+    ## convert from JSON format
+    data <- jsonlite::fromJSON(base::rawToChar(res$content)) 
+    if (length(data$items) != 0) {
+      dat <- dplyr::bind_rows(
+        dat,
+        data$items |> 
+          dplyr::select(-links)) # necessary for API accounting, but not part of the dataset
+    }
   }
+  dat_catch <- dat
   
-  ## bind sub-pull to dat data.frame
-  dat <- dplyr::bind_rows(dat, 
-                          data$items |>
-                            dplyr::select(-links)) # necessary for API accounting, but not part of the dataset)
-}
-dat_haul <- dat
-
-### Download catch data for Grenadier ------------------------------------------
-
-## query the API link
-# data for all walleye pollock caught in all 2023 eastern Bering Sea survey hauls
-dat <- data.frame()
-# there must be a better way to select multiple values for one parameter, 
-# but saving that, we will loop through each hauljoin and collect the data of interest
-grenadier_codes <- c(21204, # Caelorinchus scaphopsis shoulderspot grenadier
-                     21210, # Coryphaenoides sp.
-                     21220, # Coryphaenoides acrolepis Pacific grenadier
-                     21230, # Albatrossia pectoralis giant grenadier
-                     21232, # Coryphaenoides cinereus popeye grenadier
-                     21238, # Coryphaenoides filifer filamented grenadier
-                     21239 # Coryphaenoides longifilis longfin grenadier
-)
-
-for (i in grenadier_codes) {
-  res <- httr::GET(url = paste0(
-    'https://apps-st.fisheries.noaa.gov/ods/foss/afsc_groundfish_survey_catch/', 
-    '?q={"species_code":',i,'}'))
-  ## convert from JSON format
-  data <- jsonlite::fromJSON(base::rawToChar(res$content)) 
-  if (length(data$items) != 0) {
-    dat <- dplyr::bind_rows(
-      dat,
-      data$items |> 
-        dplyr::select(-links)) # necessary for API accounting, but not part of the dataset
-  }
-}
-dat_catch <- dat
-
-### Join groundfish haul and catch data ----------------------------------------
-
-gap_data <- dat_catch |>
-  dplyr::left_join(dat_haul) |> 
-  dplyr::group_by(srvy, species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) |> 
-  dplyr::summarise(cpue_nokm2 = sum(cpue_nokm2, na.rm = TRUE), 
-                   cpue_kgkm2 = sum(cpue_kgkm2, na.rm = TRUE),
-                   count = sum(count, na.rm = TRUE),
-                   weight_kg = sum(weight_kg, na.rm = TRUE))
-write.csv(x = gap_data,file = "./data/gap_data_processed.csv")
-
-## Pick years in both larval and groundfish data for plotting ------------------
+  ### Join groundfish haul and catch data ----------------------------------------
+  
+  gap_data <- dat_catch |>
+    dplyr::left_join(dat_haul) |> 
+    dplyr::group_by(srvy, species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) |> 
+    dplyr::summarise(cpue_nokm2 = sum(cpue_nokm2, na.rm = TRUE), 
+                     cpue_kgkm2 = sum(cpue_kgkm2, na.rm = TRUE),
+                     count = sum(count, na.rm = TRUE),
+                     weight_kg = sum(weight_kg, na.rm = TRUE))
+  write.csv(x = gap_data,file = "./data/gap_data_processed.csv")
+  
+  ## Pick years in both larval and groundfish data for plotting ------------------
 }
 
 gap_data<-gap_data |>
