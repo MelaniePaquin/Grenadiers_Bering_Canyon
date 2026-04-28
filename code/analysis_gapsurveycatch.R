@@ -4,6 +4,11 @@ source("./code/functions.R")
 
 ## load data from GAP_PRODUCTS -------------------------------------------------
 
+
+# from analaysis_depths.R
+larval_dat <- read.csv(file = "./data/larval_dat_processed.csv")
+
+
 library("RODBC")
 
 # Documentation
@@ -103,6 +108,22 @@ gap_data <- RODBC::sqlQuery(channel,
 "SELECT 
     cc.YEAR, 
     cc.SURVEY_DEFINITION_ID, 
+    CASE
+    WHEN cc.SURVEY_DEFINITION_ID = 143 THEN 'NBS'
+    WHEN cc.SURVEY_DEFINITION_ID = 98 THEN 'EBS'
+    WHEN cc.SURVEY_DEFINITION_ID = 47 THEN 'GOA'
+    WHEN cc.SURVEY_DEFINITION_ID = 52 THEN 'AI'
+    WHEN cc.SURVEY_DEFINITION_ID = 78 THEN 'BSS'
+    ELSE NULL
+END AS SRVY, 
+CASE
+    WHEN cc.SURVEY_DEFINITION_ID = 143 THEN 'northern Bering Sea'
+    WHEN cc.SURVEY_DEFINITION_ID = 98 THEN 'eastern Bering Sea'
+    WHEN cc.SURVEY_DEFINITION_ID = 47 THEN 'Gulf of Alaska'
+    WHEN cc.SURVEY_DEFINITION_ID = 52 THEN 'Aleutian Islands'
+    WHEN cc.SURVEY_DEFINITION_ID = 78 THEN 'Bering Sea Slope'
+    ELSE NULL
+END AS SURVEY, 
     cc.SURVEY_NAME, 
     cc.CRUISE,
     cc.CRUISEJOIN,
@@ -146,9 +167,9 @@ WHERE cp.WEIGHT_KG > 0
     AND cc.SURVEY_DEFINITION_ID IN (143, 98, 47, 52, 78)
     AND cp.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001)")) |> 
   dplyr::rename_all(tolower) 
-write.csv(x = specimen_gap_all, file = "data/gap_data.csv")
+write.csv(x = gap_data, file = "data/gap_data.csv")
 
-specimen_gap_all <- read.csv("data/gap_data.csv")
+gap_data <- read.csv("data/gap_data.csv")
 # Plot maps of where grenadier were found by year ------------------------------
 
 ## Groundfish Bottom Trawl Survey catch and haul data (FOSS) -------------------
@@ -211,30 +232,31 @@ dat_catch <- dat
 
 ### Join groundfish haul and catch data ----------------------------------------
 
-gfdat <- dat_catch |>
+gap_data <- dat_catch |>
   dplyr::left_join(dat_haul) |> 
   dplyr::group_by(srvy, species_code, hauljoin, longitude_dd_start, latitude_dd_start, year) |> 
   dplyr::summarise(cpue_nokm2 = sum(cpue_nokm2, na.rm = TRUE), 
                    cpue_kgkm2 = sum(cpue_kgkm2, na.rm = TRUE),
                    count = sum(count, na.rm = TRUE),
                    weight_kg = sum(weight_kg, na.rm = TRUE))
-write.csv(x = gfdat,file = "./data/gfdat_processed.csv")
+write.csv(x = gap_data,file = "./data/gap_data_processed.csv")
 
-gfdat<-gfdat |>
+## Pick years in both larval and groundfish data for plotting ------------------
+}
+
+gap_data<-gap_data |>
   sf::st_as_sf(coords = c("longitude_dd_start", "latitude_dd_start"), 
                remove = FALSE,
                crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") |>
   sf::st_transform(crs = crs_out) |> 
   dplyr::mutate(Year = year)
 
-## Pick years in both larval and groundfish data for plotting ------------------
-
-surveyyrs <- dat_haul |> 
+surveyyrs <- gap_data |> 
   dplyr::select(year, srvy) |> 
   unique() |> 
   dplyr::arrange(desc(year)) |> 
-  dplyr::filter(year %in% unique(c(gfdat$Year, larval_dat$Year)))
-}
+  dplyr::filter(year %in% unique(c(gap_data$Year, larval_dat$Year)))
+
 ## Inport Groundfish Bottom Trawl Survey shapefiles (akgfmaps) -----------------
 
 shp_ebs <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto")
@@ -270,6 +292,17 @@ shp_all <- shp <- dplyr::bind_rows(list(
 
 ## Plot map --------------------------------------------------------------------
 
+color_palette <- c("0.1-8 mm" = "grey",
+                   "8-10.5 mm" = "pink",
+                   "10.6-12.5 mm" = "blue",
+                   "12.6-14.5 mm" = "green",
+                   "14.6-16.5 mm" = "purple",
+                   "16.6-18.5 mm" = "gold",
+                   "18.6-20.5 mm" = "forestgreen", 
+                   "20.6-22.5 mm" = "cyan",# Addition of size bin titles
+                   "22.6-24.5 mm" = "gold",
+                   "24.6-100 mm" = "black")
+
 p17 <- ggplot2::ggplot() +
   # Survey area shapefile
   ggplot2::geom_sf(data = shp_all,
@@ -286,7 +319,6 @@ p17 <- ggplot2::ggplot() +
                               breaks = seq(-180, -150, 5)) +
   ggplot2::scale_y_continuous(name = "Latitude °N",
                               breaks = seq(50, 65, 5)) + # seq(52, 62, 2)
-  ggplot2::facet_wrap(~Year) +
   
   ggplot2::geom_sf_text(
     data = place_labels |> dplyr::filter(type == "mainland"),
@@ -309,7 +341,7 @@ p17 <- ggplot2::ggplot() +
     size = 2, 
     show.legend = FALSE) +
   ggplot2::geom_sf(
-    data = gfdat, 
+    data = gap_data, 
     mapping = aes(
       size = cpue_kgkm2,
       geometry = geometry),
@@ -323,6 +355,7 @@ p17 <- ggplot2::ggplot() +
       geometry = geometry),
     size = 3,
     alpha = 0.5) + 
+  ggplot2::facet_wrap(~Year) +
   
   # manually define color for points
   ggplot2::scale_color_manual(
