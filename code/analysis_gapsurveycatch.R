@@ -154,7 +154,7 @@ specimen_gap_all <- read.csv("data/gap_data.csv")
 ## Groundfish Bottom Trawl Survey catch and haul data (FOSS) -------------------
 
 ### Download haul data ---------------------------------------------------------
-
+if (FALSE) { # FOSS APPEARS TO BE DOWN
 dat <- data.frame()
 for (i in seq(0, 500000, 10000)){
   ## find how many iterations it takes to cycle through the data
@@ -234,7 +234,7 @@ surveyyrs <- dat_haul |>
   unique() |> 
   dplyr::arrange(desc(year)) |> 
   dplyr::filter(year %in% unique(c(gfdat$Year, larval_dat$Year)))
-
+}
 ## Inport Groundfish Bottom Trawl Survey shapefiles (akgfmaps) -----------------
 
 shp_ebs <- akgfmaps::get_base_layers(select.region = "bs.south", set.crs = "auto")
