@@ -170,6 +170,64 @@ WHERE cp.WEIGHT_KG > 0
 write.csv(x = gap_data, file = "data/gap_data.csv")
 
 gap_data <- read.csv("data/gap_data.csv")
+
+length_gap <- RODBC::sqlQuery(channel,
+                                paste0("SELECT 
+                                ll.HAULJOIN, ll.SPECIES_CODE, ll.SEX, ll.FREQUENCY, ll.LENGTH_MM, ll.LENGTH_TYPE, ll.SAMPLE_TYPE, 
+                                
+                                    cc.YEAR, 
+    cc.SURVEY_DEFINITION_ID, 
+    CASE
+    WHEN cc.SURVEY_DEFINITION_ID = 143 THEN 'NBS'
+    WHEN cc.SURVEY_DEFINITION_ID = 98 THEN 'EBS'
+    WHEN cc.SURVEY_DEFINITION_ID = 47 THEN 'GOA'
+    WHEN cc.SURVEY_DEFINITION_ID = 52 THEN 'AI'
+    WHEN cc.SURVEY_DEFINITION_ID = 78 THEN 'BSS'
+    ELSE NULL
+END AS SRVY, 
+CASE
+    WHEN cc.SURVEY_DEFINITION_ID = 143 THEN 'northern Bering Sea'
+    WHEN cc.SURVEY_DEFINITION_ID = 98 THEN 'eastern Bering Sea'
+    WHEN cc.SURVEY_DEFINITION_ID = 47 THEN 'Gulf of Alaska'
+    WHEN cc.SURVEY_DEFINITION_ID = 52 THEN 'Aleutian Islands'
+    WHEN cc.SURVEY_DEFINITION_ID = 78 THEN 'Bering Sea Slope'
+    ELSE NULL
+END AS SURVEY, 
+    cc.SURVEY_NAME, 
+    cc.CRUISE,
+    cc.CRUISEJOIN,
+    hh.HAULJOIN, 
+    hh.HAUL, 
+    hh.STRATUM, 
+    hh.STATION, 
+    cc.VESSEL_ID, 
+    cc.VESSEL_NAME, 
+    hh.DATE_TIME_START AS DATE_TIME,
+    hh.LATITUDE_DD_START, 
+    hh.LONGITUDE_DD_START, 
+    hh.LATITUDE_DD_END, 
+    hh.LONGITUDE_DD_END, 
+    hh.GEAR_TEMPERATURE_C AS BOTTOM_TEMPERATURE_C,
+    hh.SURFACE_TEMPERATURE_C, 
+    hh.DEPTH_M, 
+    hh.DISTANCE_FISHED_KM, 
+    hh.DURATION_HR, 
+    hh.NET_WIDTH_M,
+    hh.NET_HEIGHT_M,
+    hh.PERFORMANCE,
+    tc.TAXON_CONFIDENCE
+FROM GAP_PRODUCTS.AKFIN_LENGTH ll
+LEFT JOIN GAP_PRODUCTS.AKFIN_HAUL hh 
+    ON ll.HAULJOIN = hh.HAULJOIN
+LEFT JOIN GAP_PRODUCTS.AKFIN_CRUISE cc 
+    ON hh.CRUISEJOIN = cc.CRUISEJOIN
+LEFT JOIN GAP_PRODUCTS.TAXONOMIC_CONFIDENCE tc 
+    ON ll.SPECIES_CODE = tc.SPECIES_CODE 
+    AND cc.SURVEY_DEFINITION_ID = tc.SURVEY_DEFINITION_ID
+    AND cc.YEAR = tc.YEAR
+ WHERE ll.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001); "))
+write.csv(x = length_gap, file = "data/length_gap.csv")
+
 # Plot maps of where grenadier were found by year ------------------------------
 
 ## Groundfish Bottom Trawl Survey catch and haul data (FOSS) -------------------
