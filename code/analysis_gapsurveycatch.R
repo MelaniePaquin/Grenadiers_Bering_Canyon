@@ -10,43 +10,13 @@ library("RODBC")
 # https://afsc-gap-products.github.io/gap_products/
 # https://www.fisheries.noaa.gov/resource/document/groundfish-survey-species-code-manual-and-data-codes-manual  
 
-# # Sign into Oracle
-# source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
+if (FALSE) { # only em can run this
+# Sign into Oracle
+source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
 
- oracle_user <- "paquinm"
- oracle_pw <- "Phrynosoma#1" # NEED!
- channel <- RODBC::odbcConnect(dsn = "AFSC", 
-                               uid = oracle_user, 
-                               pwd = oracle_pw, 
-                               believeNRows = FALSE)
- 
-# # # Download data
- specimen_gap <- RODBC::sqlQuery(channel,
-                                      paste0("SELECT *
- FROM GAP_PRODUCTS.AKFIN_SPECIMEN
- WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
-  
-
- sizecomp_gap <- RODBC::sqlQuery(channel,
-                                      paste0("SELECT *
- FROM GAP_PRODUCTS.AKFIN_SIZECOMP
- WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
-
- catch_gap <- RODBC::sqlQuery(channel,
-                                      paste0("SELECT *
- FROM GAP_PRODUCTS.AKFIN_CPUE
- WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
- write.csv(x = catch_gap, file = "data/catch_gap.csv")
-
-specimen_gap <- read.csv("data/specimen_gap.csv")
-sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
-catch_gap <- read.csv("data/catch_gap.csv")
-
-specimen_gap_all <- # connects all hauls (even bad hauls!) with specimen data
-  RODBC::sqlQuery(channel, paste0(
-    "SELECT DISTINCT
+  specimen_gap_all <- # connects all hauls (even bad hauls!) with specimen data
+    RODBC::sqlQuery(channel, paste0(
+      "SELECT DISTINCT
   s.SPECIMEN_ID, 
   s.SPECIES_CODE, 
   t.COMMON_NAME, 
@@ -90,18 +60,42 @@ JOIN GAP_PRODUCTS.TAXONOMIC_CLASSIFICATION t
 ON t.SPECIES_CODE = s.SPECIES_CODE
 WHERE s.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21238, 21240, 24001)
 AND t.SURVEY_SPECIES = 1;"))
-write.csv(x = specimen_gap_all, file = "data/specimen_gap_all.csv")
+  write.csv(x = specimen_gap_all, file = "data/specimen_gap_all.csv")
+  
+  specimen_gap_all <- read.csv("data/specimen_gap_all.csv")
+}
 
-specimen_gap_all <- read.csv("data/specimen_gap_all.csv")
+# Sign into Oracle
+ oracle_user <- "paquinm"
+ oracle_pw <- "Phrynosoma#1" # NEED!
+ channel <- RODBC::odbcConnect(dsn = "AFSC", 
+                               uid = oracle_user, 
+                               pwd = oracle_pw, 
+                               believeNRows = FALSE)
+ 
+# # # Download data
+ specimen_gap <- RODBC::sqlQuery(channel,
+                                      paste0("SELECT *
+ FROM GAP_PRODUCTS.AKFIN_SPECIMEN
+ WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+ write.csv(x = specimen_gap, file = "data/specimen_gap.csv")
+  
 
+ sizecomp_gap <- RODBC::sqlQuery(channel,
+                                      paste0("SELECT *
+ FROM GAP_PRODUCTS.AKFIN_SIZECOMP
+ WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+ write.csv(x = sizecomp_gap, file = "data/sizecomp_gap.csv")
 
-# catch_gap <- RODBC::sqlQuery(channel,
-#                              paste0("SELECT *
-#  FROM GAP_PRODUCTS.AKFIN_CPUE
-#  WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
-# write.csv(x = catch_gap, file = "data/catch_gap.csv")
+ catch_gap <- RODBC::sqlQuery(channel,
+                                      paste0("SELECT *
+ FROM GAP_PRODUCTS.AKFIN_CPUE
+ WHERE SPECIES_CODE IN (24001, 21220, 21232, 21230); "))
+ write.csv(x = catch_gap, file = "data/catch_gap.csv")
 
-
+specimen_gap <- read.csv("data/specimen_gap.csv")
+sizecomp_gap <- read.csv("data/sizecomp_gap.csv")
+catch_gap <- read.csv("data/catch_gap.csv")
 
 # standard hauls only
 gap_data <- RODBC::sqlQuery(channel,
