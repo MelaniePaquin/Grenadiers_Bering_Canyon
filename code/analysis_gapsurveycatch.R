@@ -11,7 +11,7 @@ library("RODBC")
 # https://www.fisheries.noaa.gov/resource/document/groundfish-survey-species-code-manual-and-data-codes-manual  
 
 # # Sign into Oracle
-source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
+# source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
 
  oracle_user <- "paquinm"
  oracle_pw <- "Phrynosoma#1" # NEED!
