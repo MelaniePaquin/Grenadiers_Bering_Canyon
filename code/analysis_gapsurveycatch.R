@@ -19,6 +19,15 @@ if (FALSE) { # only em can run this
   # Sign into Oracle
   source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
   
+  h137 <- # a bad haul with prowfish catch
+    RODBC::sqlQuery(channel, paste0(
+      "SELECT * 
+FROM RACEBASE.HAUL h
+LEFT JOIN RACEBASE.CRUISE c
+ON h.CRUISEJOIN = c.CRUISEJOIN
+WHERE c.CRUISEJOIN = -767 AND h.HAUL = 137;"))
+  write.csv(x = h137, file = "data/h137.csv")
+  
   specimen_gap_all <- # connects all hauls (even bad hauls!) with specimen data
     RODBC::sqlQuery(channel, paste0(
       "SELECT DISTINCT
