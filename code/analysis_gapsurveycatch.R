@@ -149,6 +149,8 @@ END AS SURVEY,
     hh.PERFORMANCE,
     -- Catch specific details
     cp.SPECIES_CODE,
+    tt.SPECIES_NAME, 
+    tt.COMMON_NAME, 
     cp.CPUE_KGKM2, 
     cp.CPUE_NOKM2,
     cp.COUNT, 
@@ -163,9 +165,12 @@ LEFT JOIN GAP_PRODUCTS.TAXONOMIC_CONFIDENCE tc
     ON cp.SPECIES_CODE = tc.SPECIES_CODE 
     AND cc.SURVEY_DEFINITION_ID = tc.SURVEY_DEFINITION_ID
     AND cc.YEAR = tc.YEAR
+LEFT JOIN TAXONOMIC_CLASSIFICATION tt
+ON cp.SPECIES_CODE = tt.SPECIES_CODE 
 WHERE cp.WEIGHT_KG > 0
     AND cc.SURVEY_DEFINITION_ID IN (143, 98, 47, 52, 78)
-    AND cp.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001)")) |> 
+    AND cp.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001)
+ AND tt.SURVEY_SPECIES = 1;")) |> 
   dplyr::rename_all(tolower) 
 write.csv(x = gap_data, file = "data/gap_data.csv")
 
@@ -173,8 +178,14 @@ gap_data <- read.csv("data/gap_data.csv")
 
 length_gap <- RODBC::sqlQuery(channel,
                                 paste0("SELECT 
-                                ll.HAULJOIN, ll.SPECIES_CODE, ll.SEX, ll.FREQUENCY, ll.LENGTH_MM, ll.LENGTH_TYPE, ll.SAMPLE_TYPE, 
-                                
+                                ll.HAULJOIN, ll.SPECIES_CODE,
+                                tt.SPECIES_NAME, 
+    tt.COMMON_NAME, 
+    ll.SEX, 
+    ll.FREQUENCY, 
+    ll.LENGTH_MM, 
+    ll.LENGTH_TYPE, 
+    ll.SAMPLE_TYPE,
                                     cc.YEAR, 
     cc.SURVEY_DEFINITION_ID, 
     CASE
@@ -221,11 +232,14 @@ LEFT JOIN GAP_PRODUCTS.AKFIN_HAUL hh
     ON ll.HAULJOIN = hh.HAULJOIN
 LEFT JOIN GAP_PRODUCTS.AKFIN_CRUISE cc 
     ON hh.CRUISEJOIN = cc.CRUISEJOIN
+LEFT JOIN TAXONOMIC_CLASSIFICATION tt
+ON ll.SPECIES_CODE = tt.SPECIES_CODE 
 LEFT JOIN GAP_PRODUCTS.TAXONOMIC_CONFIDENCE tc 
     ON ll.SPECIES_CODE = tc.SPECIES_CODE 
     AND cc.SURVEY_DEFINITION_ID = tc.SURVEY_DEFINITION_ID
     AND cc.YEAR = tc.YEAR
- WHERE ll.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001); "))
+ WHERE ll.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001)
+ AND tt.SURVEY_SPECIES = 1;"))
 write.csv(x = length_gap, file = "data/length_gap.csv")
 
 # Plot maps of where grenadier were found by year ------------------------------
