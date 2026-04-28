@@ -19,14 +19,7 @@ if (FALSE) { # only em can run this
   # Sign into Oracle
   source("Z:/Projects/ConnectToOracle.R") # for Em, which has access to RACE_DATA
   
-  h137 <- # a bad haul with prowfish catch
-    RODBC::sqlQuery(channel, paste0(
-      "SELECT * 
-FROM RACEBASE.HAUL h
-LEFT JOIN RACEBASE.CRUISE c
-ON h.CRUISEJOIN = c.CRUISEJOIN
-WHERE c.CRUISEJOIN = -767 AND h.HAUL = 137;"))
-  write.csv(x = h137, file = "data/h137.csv")
+ 
   
   specimen_gap_all <- # connects all hauls (even bad hauls!) with specimen data
     RODBC::sqlQuery(channel, paste0(
@@ -86,6 +79,15 @@ channel <- RODBC::odbcConnect(dsn = "AFSC",
                               uid = oracle_user, 
                               pwd = oracle_pw, 
                               believeNRows = FALSE)
+
+h137 <- # a bad haul with prowfish catch
+  RODBC::sqlQuery(channel, paste0(
+    "SELECT * 
+FROM RACEBASE.HAUL h
+LEFT JOIN RACEBASE.CRUISE c
+ON h.CRUISEJOIN = c.CRUISEJOIN
+WHERE c.CRUISEJOIN = -767 AND h.HAUL = 137;"))
+write.csv(x = h137, file = "data/h137.csv")
 
 # # # Download data
 specimen_gap <- RODBC::sqlQuery(channel,
@@ -170,8 +172,8 @@ ON cp.SPECIES_CODE = tt.SPECIES_CODE
 WHERE cp.WEIGHT_KG > 0
     AND cc.SURVEY_DEFINITION_ID IN (143, 98, 47, 52, 78)
     AND cp.SPECIES_CODE IN (21200, 21201, 21202, 21204, 21210, 21220, 21230, 21232, 21238, 21240, 24001)
- AND tt.SURVEY_SPECIES = 1;")) |> 
-  dplyr::rename_all(tolower) 
+ AND tt.SURVEY_SPECIES = 1;")) #|> 
+#  dplyr::rename_all(tolower) 
 write.csv(x = gap_data, file = "data/gap_data.csv")
 
 gap_data <- read.csv("data/gap_data.csv")
@@ -460,7 +462,7 @@ p17 <- ggplot2::ggplot() +
   )
 
 str00 <- "example variable"
-str0 <- paste0(str00, ": Note run Source gives all new plots. Just leave them and overwrite them continuously, unless I want to save a version for something. notes about figure and process: Hatch date was calculated using capture date and slow growth rate see file GrenadierLarv_xy_time_stepDEC24MMP_Nedv3Calc_date_hatchESTIMATE.xml. At hatch day larva is one day old. Also explained in .pos file compilation drftB_depth_1993_07_08_09_6hr_data_slow_fast.xml. Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run) for depth 375 m see code drftB_375m_1993_0429_6hr.pos, 34035. Next step 1) ground truth the GMT date to a real date. It is in output to file Gren_larv_ROMS_summary_speed.doc as the hatch and  capture dates.  Also, 2) why the output file  compare_roms_outputs_dat.csv is still outputting 1993 only (2007 is missing). Note that and that file Gren_larv_ROMS_summary_speed.doc is summarized as roms_dat_lines from roms_dat. So roms_dat has the math At each data point, and roms_dat_lines has the summary statistics by year and depth (maybe one more thing). One issue I've found is that in 2007 I get a date discrepancy (by a day) instead of # Hatch date February 28 (GMT =  39138) (expected input), the output file shows February 27 th  (file Gren_larv_ROMS_summary_speed.doc). Oddly  the 1993 data output look correct.FIX: it is likely b/c of the math. Note Subtraction of GMT values + 1 = number of days particle drift. This returns correct hatch date. Table output file name Gren_larv_ROMS_summary_speed is this specifying data are not radians calculated? If not then how to specify so know which method used? Issue w/ in the file Gren_larv_ROMS_summary_speed that this data row drftB_100m_2008_0224_6hr.pos listed out of order by depth.Note that these output data have updated current speed mean, low and high values for each depth. One thing that Wei and Ned will probably notice is that there was a jump in some high values reported.These simulations are done using archived weekly averaged velocity fields with 6-hour time steps for the particle trajectories.")
+str0 <- paste0(str00, ": Note run Source gives all new plots. Just leave them and overwrite them continuously, unless I want to save a version for something. notes about figure and process: Hatch date was calculated using capture date and slow growth rate see file GrenadierLarv_xy_time_stepDEC24MMP_Nedv3Calc_date_hatchESTIMATE.xml. At hatch day larva is one day old. Also explained in .pos file compilation drftB_depth_1993_07_08_09_6hr_data_slow_fast.xml. Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run) for depth 375 m see code drftB_375m_1993_0429_6hr.pos, 34035. Next step 1) ground truth the GMT date to a real date. It is in output to file Gren_larv_ROMS_summary_speed.doc as the hatch and  capture dates.  Also, 2) why the output file  compare_roms_outputs_dat.csv is still outputting 1993 only (2007 is missing). Note that and that file Gren_larv_ROMS_summary_speed.doc is summarized as roms_dat_lines from roms_dat. So roms_dat has the math At each data point, and roms_dat_lines has the summary statistics by year and depth (maybe one more thing). One issue I've found is that in 2007 I get a date discrepancy (by a day) instead of # Hatch date February 28 (GMT =  39138) (expected input), the output file shows February 27 th  (file Gren_larv_ROMS_summary_speed.doc). Oddly  the 1993 data output look correct.FIX: it is likely b/c of the math. Note Subtraction of GMT values + 1 = number of days particle drift. This returns correct hatch date. Table output file name Gren_larv_ROMS_summary_speed is this specifying data are not radians calculated? If not then how to specify so know which method used? Issue w/ in the file Gren_larv_ROMS_summary_speed that this data row drftB_100m_2008_0224_6hr.pos listed out of order by depth.Note that these output data have updated current speed mean, low and high values for each depth. One thing that Wei and Ned will probably notice is that there was a jump in some high values reported.These simulations are done using archived weekly averaged velocity fields with 6-hour time steps for the particle trajectories.Note run Source gives all new plots. Just leave them and overwrite them continuously, unless I want to save a version for something. notes about figure and process: Hatch date was calculated using capture date and slow growth rate see file GrenadierLarv_xy_time_stepDEC24MMP_Nedv3Calc_date_hatchESTIMATE.xml. At hatch day larva is one day old. Also explained in .pos file compilation drftB_depth_1993_07_08_09_6hr_data_slow_fast.xml. Skipping zeroes March 9 (GMT =  34035) - April 29 (GMT = 34086; last day of roms run) for depth 375 m see code drftB_375m_1993_0429_6hr.pos, 34035. Next step 1) ground truth the GMT date to a real date. It is in output to file Gren_larv_ROMS_summary_speed.doc as the hatch and  capture dates.  Also, 2) why the output file  compare_roms_outputs_dat.csv is still outputting 1993 only (2007 is missing). Note that and that file Gren_larv_ROMS_summary_speed.doc is summarized as roms_dat_lines from roms_dat. So roms_dat has the math At each data point, and roms_dat_lines has the summary statistics by year and depth (maybe one more thing). One issue I've found is that in 2007 I get a date discrepancy (by a day) instead of # Hatch date February 28 (GMT =  39138) (expected input), the output file shows February 27 th  (file Gren_larv_ROMS_summary_speed.doc). Oddly  the 1993 data output look correct.FIX: it is likely b/c of the math. Note Subtraction of GMT values + 1 = number of days particle drift. This returns correct hatch date. Table output file name Gren_larv_ROMS_summary_speed is this specifying data are not radians calculated? If not then how to specify so know which method used? Issue w/ in the file Gren_larv_ROMS_summary_speed that this data row drftB_100m_2008_0224_6hr.pos listed out of order by depth.Note that these output data have updated current speed mean, low and high values for each depth. One thing that Wei and Ned will probably notice is that there was a jump in some high values reported.These simulations are done using archived weekly averaged velocity fields with 6-hour time steps for the particle trajectories.Specimen data may include special projects requests but not guaranteed. Want AKfin length data. Length in 'LENGTH_MM' field in sizecomp_gap.csv is extrapolated based on count. File catch_gap.csv has weight but can only use if there is one. Otherwise it is a weight/count.")
 p17
 
 ## Plot and save data ----------------------------------------------------------
